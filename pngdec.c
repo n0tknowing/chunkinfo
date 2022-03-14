@@ -274,7 +274,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 	uint32_t gama = 0;
 	memcpy(&gama, data, sizeof(uint32_t));
 
-	printf("%u", __builtin_bswap32(gama));
+	printf("%01.05f", (float)__builtin_bswap32(gama) / 100000);
 }
 
 static void decode_chrm(const uint8_t *data, const uint32_t len)
@@ -303,14 +303,14 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 	}
 
 	printf("\n");
-	printf("\tWhite point x  = %u\n", res[0]);
-	printf("\tWhite point y  = %u\n", res[1]);
-	printf("\tRed x          = %u\n", res[2]);
-	printf("\tRed y          = %u\n", res[3]);
-	printf("\tBlue x         = %u\n", res[4]);
-	printf("\tBlue y         = %u\n", res[5]);
-	printf("\tGreen x        = %u\n", res[6]);
-	printf("\tGreen y        = %u", res[7]);
+	printf("\tWhite point x  = %01.05f\n", (float)res[0] / 100000);
+	printf("\tWhite point y  = %01.05f\n", (float)res[1] / 100000);
+	printf("\tRed x          = %01.05f\n", (float)res[2] / 100000);
+	printf("\tRed y          = %01.05f\n", (float)res[3] / 100000);
+	printf("\tBlue x         = %01.05f\n", (float)res[4] / 100000);
+	printf("\tBlue y         = %01.05f\n", (float)res[5] / 100000);
+	printf("\tGreen x        = %01.05f\n", (float)res[6] / 100000);
+	printf("\tGreen y        = %01.05f", (float)res[7] / 100000);
 }
 
 static void decode_iccp(const uint8_t *data, const uint32_t len)
@@ -382,7 +382,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		}
 
 		if (bit_depth < 16) {
-			printf("%02x", data[1]);
+			printf("%u", data[1]);
 		} else {
 			uint8_t col[2] = { data[0], data[1] };
 			uint16_t val = 0;
@@ -397,12 +397,11 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		}
 
 		if (bit_depth < 16) {
-			printf("#%02x%02x%02x", data[1], data[3], data[5]);
+			printf("%02x %02x %02x", data[1], data[3], data[5]);
 		} else {
-			printf("\n");
-			printf("\tRed   = %02x%02x\n", data[0], data[1]);
-			printf("\tGreen = %02x%02x\n", data[2], data[3]);
-			printf("\tBlue  = %02x%02x", data[4], data[5]);
+			printf("%02x%02x ", data[0], data[1]);
+			printf("%02x%02x ", data[2], data[3]);
+			printf("%02x%02x", data[4], data[5]);
 		}
 		break;
 	case INDEXED: {
@@ -412,8 +411,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		}
 
 		uint32_t i = data[0];
-		printf("palette index: %u", i);
-		printf(" (#%02x%02x%02x)", plt[i][0], plt[i][1], plt[i][2]);
+		printf("%u ", i);
+		printf("(#%02x%02x%02x)", plt[i][0], plt[i][1], plt[i][2]);
 		break;
 	}
 	default:
@@ -430,7 +429,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			fprintf(stderr, "sBIT: invalid length\n");
 			return;
 		}
-		printf("%u (grayscale)", data[0]);
+
+		printf("%u", data[0]);
 		break;
 	case GRAY_ALPHA:
 		if (len != 2) {
@@ -438,9 +438,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			return;
 		}
 
-		printf("\n");
-		printf("\tGrayscale = %u\n", data[0]);
-		printf("\tAlpha     = %u", data[1]);
+		printf("%u %u", data[0], data[1]);
 		break;
 	case INDEXED: case RGB:
 		if (len != 3) {
@@ -448,10 +446,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			return;
 		}
 
-		printf("\n");
-		printf("\tRed   = %u\n", data[0]);
-		printf("\tGreen = %u\n", data[1]);
-		printf("\tBlue  = %u", data[2]);
+		printf("%u %u %u", data[0], data[1], data[2]);
 		break;
 	case RGB_ALPHA:
 		if (len != 4) {
@@ -459,11 +454,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			return;
 		}
 
-		printf("\n");
-		printf("\tRed   = %u\n", data[0]);
-		printf("\tGreen = %u\n", data[1]);
-		printf("\tBlue  = %u\n", data[2]);
-		printf("\tAlpha = %u", data[3]);
+		printf("%u %u %u %u", data[0], data[1], data[2], data[3]);
 		break;
 	default:
 		fprintf(stderr, "sBIT: invalid color type");
@@ -494,12 +485,11 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		}
 
 		if (bit_depth < 16) {
-			printf("#%02x%02x%02x", data[1], data[3], data[5]);
+			printf("%02x %02x %02x", data[1], data[3], data[5]);
 		} else {
-			printf("\n");
-			printf("\tRed   = %02x%02x\n", data[0], data[1]);
-			printf("\tGreen = %02x%02x\n", data[2], data[3]);
-			printf("\tBlue  = %02x%02x", data[4], data[5]);
+			printf("%02x%02x ", data[0], data[1]);
+			printf("%02x%02x ", data[2], data[3]);
+			printf("%02x%02x", data[4], data[5]);
 		}
 		break;
 	case INDEXED:
