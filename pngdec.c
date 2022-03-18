@@ -1,3 +1,10 @@
+/*
+ * pngdec - a png decoder
+ *
+ * public domain
+ *
+ * */
+
 #include <ctype.h>
 #include <errno.h>
 #include <stdint.h>
