@@ -15,6 +15,7 @@
 
 static uint8_t plt[256][3];
 static uint8_t bit_depth, color_type;
+static uint32_t plt_entry;
 
 enum COLOR_TYPE {
 	GRAY = 0,
@@ -173,20 +174,18 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 		return;
 	}
 
-	printf("\n");
-
-	uint32_t entries = len / 3;
-	printf("\tEntries = %u\n", entries);
+	plt_entry = len / 3;
+	printf("Entries = %u\n", plt_entry);
 
 	// fill color
-	for (uint32_t i = 0, col = 0; i < entries; i++, col += 3) {
+	for (uint32_t i = 0, col = 0; i < plt_entry; i++, col += 3) {
 		plt[i][0] = data[col];
 		plt[i][1] = data[col+1];
 		plt[i][2] = data[col+2];
 	}
 
 	// print color
-	for (uint32_t i = 0, nl = 1; i < entries; i++, nl++) {
+	for (uint32_t i = 0, nl = 1; i < plt_entry; i++, nl++) {
 		printf("\t[%03u]", i);
 		printf(" #%02x%02x%02x ", plt[i][0], plt[i][1], plt[i][2]);
 		if ((nl % 6) == 0)
