@@ -258,7 +258,7 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	uint32_t ydpi = y * 0.0254;
 	const char *unit = !!data[8] ? " per meter" : "";
 
-	printf("%u (%u DPI) x %u (%u DPI) pixels%s", x, xdpi , y, ydpi , unit);
+	printf("%u (approx. %u DPI) x %u (approx. %u DPI) pixels%s", x, xdpi , y, ydpi , unit);
 }
 
 static void decode_srgb(const uint8_t *data, const uint32_t len)
@@ -547,6 +547,9 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	} else if (sample_depth == 16 && (l % 10) == 0) {
 		uint32_t entry = l / 10;
 		printf("%u", entry);
+	} else {
+		fprintf(stderr, "sPLT: corrupted data");
+		return;
 	}
 }
 
