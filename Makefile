@@ -1,19 +1,19 @@
 CC      = gcc
 CFLAGS  = -std=c99 -Wall -Wextra -Wstrict-prototypes -Wpedantic
-SRC     = utils.c decoder.c
+SRC     = pngdec.c
 BIN     = pngdec
 RM      = rm -f
 
-.default: test
+.default: build
 
-test:
-	$(CC) $(CFLAGS) $(SRC) test.c -o $(BIN)
+build:
+	$(CC) $(CFLAGS) $(SRC) -o $(BIN)
 
 debug:
-	$(CC) $(CFLAGS) -g $(SRC) test.c -o $(BIN)
+	$(CC) $(CFLAGS) -g $(SRC) -o $(BIN)
 
 debug-asan:
-	$(CC) $(CFLAGS) -g -fsanitize=address,undefined $(SRC) test.c -o $(BIN)
+	$(CC) $(CFLAGS) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
 
 clean:
 	$(RM) $(BIN)
