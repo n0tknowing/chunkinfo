@@ -326,14 +326,16 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 	uint32_t l = len;
 	printf("\tProfile name = ");
 	while (*data) {
-		putchar(*data);
+		if (isprint(*data))
+			putchar(*data);
 		data++; l--;
 	}
 	putchar('\n');
 
+	data++; l--;
 	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
-	data += 2; l -= 2;
 
+	data++; l--;
 	printf("\tProfile (compressed) = ");
 	if (l > 1)
 		printf(".....");
@@ -346,11 +348,13 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	uint32_t l = len;
 	printf("\tKeyword = ");
 	while (*data) {
-		putchar(*data);
+		if (isprint(*data))
+			putchar(*data);
 		data++; l--;
 	}
 	putchar('\n');
 
+	data++; l--;
 	printf("\tText    = ");
 	while (l > 0) {
 		if (isprint(*data))
@@ -365,14 +369,16 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 	printf("\tKeyword = ");
 	uint32_t l = len;
 	while (*data) {
-		putchar(*data);
+		if (isprint(*data))
+			putchar(*data);
 		data++; l--;
 	}
 	putchar('\n');
 
+	data++; l--;
 	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
-	data += 2; l -= 2;
 
+	data++; l--;
 	printf("\tText (compressed) = ");
 	if (l > 1)
 		printf(".....");
@@ -509,6 +515,34 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	}
 }
 
+static void decode_splt(const uint8_t *data, const uint32_t len)
+{
+	printf("\n");
+
+	uint32_t l = len;
+	printf("\tPalette name   = ");
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	putchar('\n');
+
+	data++; l--;
+	uint8_t sample_depth = *data;
+	printf("\tSample depth   = %u\n", sample_depth);
+
+	data++; l--;
+	printf("\tEntry          = ");
+	if (sample_depth == 8 && (l % 6) == 0) {
+		uint32_t entry = l / 6;
+		printf("%u", entry);
+	} else if (sample_depth == 16 && (l % 10) == 0) {
+		uint32_t entry = l / 10;
+		printf("%u", entry);
+	}
+}
+
 static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
 {
 	if (!strcmp(type, "IHDR"))
@@ -539,6 +573,8 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_sbit(data, len);
 	else if (!strcmp(type, "tRNS"))
 		decode_trns(data, len);
+	else if (!strcmp(type, "sPLT"))
+		decode_splt(data, len);
 }
 
 // __builtin_bswap32() is compiler extension
