@@ -117,7 +117,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	if (len != 13) {
 		fprintf(stderr, "corrupted IHDR chunk\n");
 		fprintf(stderr, "chunk length is expected 13, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	printf("\n");
@@ -171,7 +171,7 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	if (len % 3 != 0) {
 		fprintf(stderr, "corrupted PLTE chunk\n");
 		fprintf(stderr, "chunk length is expected divisible by 3, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	plt_entry = len / 3;
@@ -197,17 +197,18 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 {
 #if _DECODE_IDAT
 	if (len > 0) {
-		FILE *f = fopen("idat.zlib", "ab");
-		if (!f)
-			return;
+		FILE *f = fopen("idat.z", "ab");
+		if (!f) {
+			perror("IDAT: failed to open idat.z");
+			exit(1);
 		if (fwrite(data, sizeof(uint8_t), len, f) != len) {
 			fclose(f);
-			return;
+			exit(1);
 		}
 		fclose(f);
 	}
 
-	printf("see idat.zlib");
+	printf("see idat.z");
 #else
 	(void)data; (void)len;
 #endif
@@ -218,7 +219,7 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 	if (len != 7) {
 		fprintf(stderr, "corrupted tIME chunk\n");
 		fprintf(stderr, "chunk length is expected 7, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	uint16_t year = 0;
@@ -243,7 +244,7 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	if (len != 9) {
 		fprintf(stderr, "corrupted pHYs chunk\n");
 		fprintf(stderr, "chunk length is expected 9, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	uint32_t x = 0, y = 0;
@@ -265,7 +266,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 	if (len != 1) {
 		fprintf(stderr, "corrupted sRGB chunk\n");
 		fprintf(stderr, "chunk length is expected 1, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	const char *srgb_data[5] = {
@@ -288,7 +289,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 	if (len != 4) {
 		fprintf(stderr, "corrupted gAMA chunk\n");
 		fprintf(stderr, "chunk length is expected 4, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	uint32_t gama = 0;
@@ -302,7 +303,7 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 	if (len != 32) {
 		fprintf(stderr, "corrupted cHRM chunk\n");
 		fprintf(stderr, "chunk length is expected 32, but found %u\n", len);
-		return;
+		exit(1);
 	}
 
 	int offset = 0;
@@ -396,7 +397,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	case GRAY: case GRAY_ALPHA:
 		if (len != 2) {
 			fprintf(stderr, "bKGD: invalid length!\n");
-			return;
+			exit(1);
 		}
 
 		if (bit_depth < 16) {
@@ -410,7 +411,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	case RGB: case RGB_ALPHA:
 		if (len != 6) {
 			fprintf(stderr, "bKGD: invalid length!\n");
-			return;
+			exit(1);
 		}
 
 		if (bit_depth < 16) {
@@ -424,7 +425,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	case INDEXED: {
 		if (len != 1) {
 			fprintf(stderr, "bKGD: invalid length!\n");
-			return;
+			exit(1);
 		}
 
 		uint32_t i = data[0];
@@ -434,6 +435,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	}
 	default:
 		fprintf(stderr, "bKGD: invalid color type");
+		exit(1);
 		break;
 	}
 }
@@ -444,7 +446,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	case GRAY:
 		if (len != 1) {
 			fprintf(stderr, "sBIT: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		printf("%u", data[0]);
@@ -452,7 +454,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	case GRAY_ALPHA:
 		if (len != 2) {
 			fprintf(stderr, "sBIT: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		printf("%u %u", data[0], data[1]);
@@ -460,7 +462,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	case INDEXED: case RGB:
 		if (len != 3) {
 			fprintf(stderr, "sBIT: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		printf("%u %u %u", data[0], data[1], data[2]);
@@ -468,13 +470,14 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	case RGB_ALPHA:
 		if (len != 4) {
 			fprintf(stderr, "sBIT: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		printf("%u %u %u %u", data[0], data[1], data[2], data[3]);
 		break;
 	default:
 		fprintf(stderr, "sBIT: invalid color type");
+		exit(1);
 		break;
 	}
 }
@@ -485,7 +488,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	case GRAY: {
 		if (len != 2) {
 			fprintf(stderr, "tRNS: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		uint16_t val = 0;
@@ -497,7 +500,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	case RGB:
 		if (len != 6) {
 			fprintf(stderr, "tRNS: invalid length\n");
-			return;
+			exit(1);
 		}
 
 		if (bit_depth < 16) {
@@ -517,6 +520,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		break;
 	default:
 		fprintf(stderr, "tRNS: invalid color type");
+		exit(1);
 		break;
 	}
 }
@@ -548,7 +552,7 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 		printf("%u", entry);
 	} else {
 		fprintf(stderr, "sPLT: corrupted data");
-		return;
+		exit(1);
 	}
 }
 
@@ -597,14 +601,14 @@ static void read_chunk(FILE *f)
 		uint32_t size = fread_u32(f);
 		if (errno) {
 			fprintf(stderr, "error: %s\n", strerror(errno));
-			return;
+			exit(1);
 		}
 
 		// read chunk type
 		char type[5];
 		if (fread(type, sizeof(char), 4, f) != 4) {
 			fprintf(stderr, "failed to read chunk type\n");
-			return;
+			exit(1);
 		}
 
 		type[4] = 0;
@@ -619,12 +623,12 @@ static void read_chunk(FILE *f)
 			uint8_t *data = malloc(size);
 			if (!data) {
 				fprintf(stderr, "failed to allocate chunk data\n");
-				return;
+				exit(1);
 			}
 			if (fread(data, sizeof(uint8_t), size, f) != size) {
 				fprintf(stderr, "failed to read chunk data\n");
 				free(data);
-				return;
+				exit(1);
 			}
 			check = pd_crc32(check, data, size);  // data
 			decode_chunk_data(data, type, size);
@@ -637,15 +641,15 @@ static void read_chunk(FILE *f)
 		// read chunk crc
 		uint32_t chunk_crc = fread_u32(f);
 		if (errno) {
-			fprintf(stderr, "error: %s\n", strerror(errno));
-			return;
+			fprintf(stderr, "error read crc: %s\n", strerror(errno));
+			exit(1);
 		}
 		if (chunk_crc == check) {
 			printf("   CRC  = %x\n", chunk_crc);
 		} else {
 			fprintf(stderr, "chunk %s has corrupted CRC\n", type);
 			fprintf(stderr, "expected %x, got %x\n", check, chunk_crc);
-			return;
+			exit(1);
 		}
 
 		if (not_iend)
