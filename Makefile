@@ -3,6 +3,7 @@ CFLAGS  = -std=c99 -Wall -Wextra -Wstrict-prototypes -Wpedantic
 SRC     = pngdec.c
 BIN     = pngdec
 RM      = rm -f
+CTAGS   = ctags
 
 .default: build
 
@@ -16,4 +17,7 @@ debug-asan:
 	$(CC) $(CFLAGS) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
 
 clean:
-	$(RM) $(BIN)
+	$(RM) $(BIN) tags
+
+tags:
+	$(CTAGS) $(SRC)
