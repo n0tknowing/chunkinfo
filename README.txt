@@ -17,3 +17,4 @@ currently supported chunks:
 - tRNS
 - sPLT
 - hIST
+- IEND
