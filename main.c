@@ -604,6 +604,72 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	}
 }
 
+static void decode_apng_actl(const uint8_t *data, const uint32_t len)
+{
+	if (len != 8) {
+		fprintf(stderr, "acTL: corrupted chunk length\n");
+		fprintf(stderr, "chunk length is expected 8, but found %u\n", len);
+		exit(1);
+	}
+
+	printf("\n");
+
+	uint32_t nframes, nplays;
+	memcpy(&nframes, data, sizeof(uint32_t));
+	memcpy(&nplays, data + sizeof(uint32_t), sizeof(uint32_t));
+
+	nframes = __builtin_bswap32(nframes);
+	nplays = __builtin_bswap32(nplays);
+
+	printf("\tNumber of frames = %u\n", nframes);
+	printf("\tNumber of plays  = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
+}
+
+static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
+{
+	if (len != 26) {
+		fprintf(stderr, "fcTL: corrupted chunk length\n");
+		fprintf(stderr, "chunk length is expected 26, but found %u\n", len);
+		exit(1);
+	}
+
+	printf("\n");
+
+	uint32_t buf1[4]; // width, height, x_offset, y_offset;
+	uint16_t buf2[2]; // delay_nums, delay_den;
+	uint8_t buf3[2]; // dispose_op, blend_op;
+	char *dstr[4] = {
+		"None", "Background", "Previous",
+		NULL
+	};
+
+	int offset = 4; // skip sequence_number for now
+	for (uint8_t i = 0; i < 4; i++) {
+		memcpy(&buf1[i], data + offset, sizeof(uint32_t));
+		buf1[i] = __builtin_bswap32(buf1[i]);
+		offset += sizeof(uint32_t);
+	}
+
+	for (uint8_t i = 0; i < 2; i++) {
+		memcpy(&buf2[i], data + offset, sizeof(uint16_t));
+		buf2[i] = __builtin_bswap16(buf2[i]);
+		offset += sizeof(uint16_t);
+	}
+
+	buf3[0] = data[offset];
+	buf3[1] = data[offset + 1];
+	char *dispose = (buf3[0] <= 3) ? dstr[buf3[0]] : "Invalid";
+	char *blend = buf3[1] == 0 ? "Source" : buf3[1] == 1 ? "Over" : "Invalid";
+
+	printf("\tWidth    = %u\n", buf1[0]);
+	printf("\tHeight   = %u\n", buf1[1]);
+	printf("\tX offset = %u\n", buf1[2]);
+	printf("\tY offset = %u\n", buf1[3]);
+	printf("\tDelays   = %u (denominator %u)\n", buf2[0], buf2[1]);
+	printf("\tDisposal = %u (%s)\n", buf3[0], dispose);
+	printf("\tBlend    = %u (%s)", buf3[1], blend);
+}
+
 static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
 {
 	if (!strcmp(type, "IHDR"))
@@ -638,6 +704,10 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_splt(data, len);
 	else if (!strcmp(type, "hIST"))
 		decode_hist(data, len);
+	else if (!strcmp(type, "acTL"))
+		decode_apng_actl(data, len);
+	else if (!strcmp(type, "fcTL"))
+		decode_apng_fctl(data, len);
 }
 
 static void read_chunk(FILE *f)
