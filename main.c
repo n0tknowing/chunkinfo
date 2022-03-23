@@ -116,7 +116,7 @@ static int png_ok(FILE *f)
 static void decode_ihdr(const uint8_t *data, const uint32_t len)
 {
 	if (len != 13) {
-		fprintf(stderr, "corrupted IHDR chunk\n");
+		fprintf(stderr, "IHDR: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 13, but found %u\n", len);
 		exit(1);
 	}
@@ -170,7 +170,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 static void decode_plte(const uint8_t *data, const uint32_t len)
 {
 	if (len % 3 != 0) {
-		fprintf(stderr, "corrupted PLTE chunk\n");
+		fprintf(stderr, "PLTE: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected divisible by 3, but found %u\n", len);
 		exit(1);
 	}
@@ -217,7 +217,7 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 static void decode_time(const uint8_t *data, const uint32_t len)
 {
 	if (len != 7) {
-		fprintf(stderr, "corrupted tIME chunk\n");
+		fprintf(stderr, "tIME: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 7, but found %u\n", len);
 		exit(1);
 	}
@@ -242,7 +242,7 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 static void decode_phys(const uint8_t *data, const uint32_t len)
 {
 	if (len != 9) {
-		fprintf(stderr, "corrupted pHYs chunk\n");
+		fprintf(stderr, "pHYs: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 9, but found %u\n", len);
 		exit(1);
 	}
@@ -264,7 +264,7 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 static void decode_srgb(const uint8_t *data, const uint32_t len)
 {
 	if (len != 1) {
-		fprintf(stderr, "corrupted sRGB chunk\n");
+		fprintf(stderr, "sRGB: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 1, but found %u\n", len);
 		exit(1);
 	}
@@ -287,7 +287,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 static void decode_gama(const uint8_t *data, const uint32_t len)
 {
 	if (len != 4) {
-		fprintf(stderr, "corrupted gAMA chunk\n");
+		fprintf(stderr, "gAMA: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 4, but found %u\n", len);
 		exit(1);
 	}
@@ -301,7 +301,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 static void decode_chrm(const uint8_t *data, const uint32_t len)
 {
 	if (len != 32) {
-		fprintf(stderr, "corrupted cHRM chunk\n");
+		fprintf(stderr, "cHRM: corrupted chunk length\n");
 		fprintf(stderr, "chunk length is expected 32, but found %u\n", len);
 		exit(1);
 	}
@@ -396,7 +396,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	switch (color_type) {
 	case GRAY: case GRAY_ALPHA:
 		if (len != 2) {
-			fprintf(stderr, "bKGD: invalid length!\n");
+			fprintf(stderr, "bKGD: corrupted chunk length\n");
+			fprintf(stderr, "expected 2 for color type gray and gray+alpha\n");
 			exit(1);
 		}
 
@@ -410,7 +411,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		break;
 	case RGB: case RGB_ALPHA:
 		if (len != 6) {
-			fprintf(stderr, "bKGD: invalid length!\n");
+			fprintf(stderr, "bKGD: corrupted chunk length\n");
+			fprintf(stderr, "expected 6 for color type rgb and rgba+alpha\n");
 			exit(1);
 		}
 
@@ -424,7 +426,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		break;
 	case INDEXED: {
 		if (len != 1) {
-			fprintf(stderr, "bKGD: invalid length!\n");
+			fprintf(stderr, "bKGD: corrupted chunk length\n");
+			fprintf(stderr, "expected 1 for color type indexed-color\n");
 			exit(1);
 		}
 
@@ -445,7 +448,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	switch (color_type) {
 	case GRAY:
 		if (len != 1) {
-			fprintf(stderr, "sBIT: invalid length\n");
+			fprintf(stderr, "sBIT: corrupted chunk length\n");
+			fprintf(stderr, "expected 1 for color type gray\n");
 			exit(1);
 		}
 
@@ -453,7 +457,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 		break;
 	case GRAY_ALPHA:
 		if (len != 2) {
-			fprintf(stderr, "sBIT: invalid length\n");
+			fprintf(stderr, "sBIT: corrupted chunk length\n");
+			fprintf(stderr, "expected 2 for color type gray+alpha\n");
 			exit(1);
 		}
 
@@ -461,7 +466,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 		break;
 	case INDEXED: case RGB:
 		if (len != 3) {
-			fprintf(stderr, "sBIT: invalid length\n");
+			fprintf(stderr, "sBIT: corrupted chunk length\n");
+			fprintf(stderr, "expected 3 for color type indexed-color and rgb\n");
 			exit(1);
 		}
 
@@ -469,7 +475,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 		break;
 	case RGB_ALPHA:
 		if (len != 4) {
-			fprintf(stderr, "sBIT: invalid length\n");
+			fprintf(stderr, "sBIT: corrupted chunk length\n");
+			fprintf(stderr, "expected 4 for color type rgb+alpha\n");
 			exit(1);
 		}
 
@@ -487,7 +494,8 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	switch (color_type) {
 	case GRAY: {
 		if (len != 2) {
-			fprintf(stderr, "tRNS: invalid length\n");
+			fprintf(stderr, "tRNS: corrupted chunk length\n");
+			fprintf(stderr, "expected 2 for color type gray\n");
 			exit(1);
 		}
 
@@ -499,7 +507,8 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	}
 	case RGB:
 		if (len != 6) {
-			fprintf(stderr, "tRNS: invalid length\n");
+			fprintf(stderr, "tRNS: corrupted chunk length\n");
+			fprintf(stderr, "expected 6 for color type rgb\n");
 			exit(1);
 		}
 
@@ -575,8 +584,8 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 static void decode_hist(const uint8_t *data, const uint32_t len)
 {
 	if (len % 2 != 0) {
-		fprintf(stderr, "hIST: corrupted length\n");
-		fprintf(stderr, "length is expected divisible by 2, but found %u\n", len);
+		fprintf(stderr, "hIST: corrupted chunk length\n");
+		fprintf(stderr, "chunk length is expected divisible by 2\n");
 		exit(1);
 	}
 
