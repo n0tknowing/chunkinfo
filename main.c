@@ -1,5 +1,5 @@
 /*
- * pngdec - a png decoder
+ * chunkinfo - show information of PNG chunks
  *
  * public domain
  *
