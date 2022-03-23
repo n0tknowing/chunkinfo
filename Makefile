@@ -1,7 +1,7 @@
 CC      = gcc
 CFLAGS  = -std=c99 -Wall -Wextra -Wstrict-prototypes -Wpedantic
-SRC     = pngdec.c
-BIN     = pngdec
+SRC     = main.c
+BIN     = chunkinfo
 RM      = rm -f
 CTAGS   = ctags
 
