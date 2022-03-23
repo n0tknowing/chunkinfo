@@ -18,3 +18,5 @@ currently supported chunks:
 - sPLT
 - hIST
 - IEND
+- acTL (from APNG)
+- fcTL (from APNG)
