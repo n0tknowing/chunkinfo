@@ -197,18 +197,17 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 static void decode_idat(const uint8_t *data, const uint32_t len)
 {
 #if _DECODE_IDAT
-	if (len > 0) {
-		FILE *f = fopen("idat.z", "ab");
-		if (!f) {
-			perror("IDAT: failed to open idat.z");
-			exit(1);
-		if (fwrite(data, sizeof(uint8_t), len, f) != len) {
-			fclose(f);
-			exit(1);
-		}
+	FILE *f = fopen("idat.z", "ab");
+	if (!f) {
+		perror("IDAT: failed to open idat.z");
+		exit(1);
+	}
+	if (fwrite(data, sizeof(uint8_t), len, f) != len) {
 		fclose(f);
+		exit(1);
 	}
 
+	fclose(f);
 	printf("see idat.z");
 #else
 	(void)data; (void)len;
