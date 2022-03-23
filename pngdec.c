@@ -513,8 +513,8 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		}
 		break;
 	case INDEXED:
-		for (uint32_t i = 0, nl = 1; i < len; i++, i++) {
-			printf("[%03u] %02x ", i, data[i]);
+		for (uint32_t i = 0, nl = 1; i < len; i++, nl++) {
+			printf("[%03u] %02x    ", i, data[i]);
 			if ((nl % 6) == 0)
 				printf("\n");
 		}
