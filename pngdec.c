@@ -161,7 +161,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 
 	const char *compression = data[10] == 0 ? "zlib deflate/inflate" : "unknown";
 	const char *filter = data[11] == 0 ? "adaptive filtering" : "unknown";
-	const char *interlace = data[12] == 7 ? "Adam7" : "no";
+	const char *interlace = data[12] == 0 ? "no" : "Adam7";
 	printf("\tCompression = %u (%s)\n", data[10], compression);
 	printf("\tFilter      = %u (%s)\n", data[11], filter);
 	printf("\tInterlace   = %u (%s interlace)", data[12], interlace);
