@@ -546,10 +546,26 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	printf("\tEntry          = ");
 	if (sample_depth == 8 && (l % 6) == 0) {
 		uint32_t entry = l / 6;
-		printf("%u", entry);
+		printf("%u\n", entry);
+		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 3, nl++) {
+			printf("\t[%03u]", i);
+			printf(" #%02x%02x%02x ", data[col], data[col+1], data[col+2]);
+			if ((nl % 6) == 0)
+				printf("\n");
+		}
 	} else if (sample_depth == 16 && (l % 10) == 0) {
 		uint32_t entry = l / 10;
-		printf("%u", entry);
+		printf("%u\n", entry);
+		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 10, nl++) {
+			printf("\t[%03u]", i);
+			printf(" #%02x%02x", data[col], data[col+1]); // red
+			printf("%02x%02x", data[col+2], data[col+3]); // green
+			printf("%02x%02x", data[col+4], data[col+5]); // blue
+			printf("%02x%02x", data[col+6], data[col+7]); // alpha
+			printf(" (%02x%02x)", data[col+8], data[col+9]); // frequency
+			if ((nl % 5) == 0)
+				printf("\n");
+		}
 	} else {
 		fprintf(stderr, "sPLT: corrupted data");
 		exit(1);
