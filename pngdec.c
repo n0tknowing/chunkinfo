@@ -25,6 +25,7 @@ enum COLOR_TYPE {
 	RGB_ALPHA = 6
 };
 
+// crc from https://github.com/skeeto/scratch/blob/master/pngattach/pngattach.c
 static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 {
 	static const uint32_t crc32_table[] = {
