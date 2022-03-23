@@ -572,6 +572,29 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	}
 }
 
+static void decode_hist(const uint8_t *data, const uint32_t len)
+{
+	if (len % 2 != 0) {
+		fprintf(stderr, "hIST: corrupted length\n");
+		fprintf(stderr, "length is expected divisible by 2, but found %u\n", len);
+		exit(1);
+	}
+
+	if (plt_entry == 0) {
+		fprintf(stderr, "hIST: cannot find PLTE chunk\n");
+		exit(1);
+	}
+
+	const uint32_t entry = len / 2;
+	printf("Entries = %u\n", entry);
+
+	for (uint32_t i = 0, nl = 1; i < entry; i++, nl++) {
+		printf("\t[%03u] %u  ", i, data[i]);
+		if ((nl % 6) == 0)
+			printf("\n");
+	}
+}
+
 static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
 {
 	if (!strcmp(type, "IHDR"))
@@ -604,10 +627,10 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_trns(data, len);
 	else if (!strcmp(type, "sPLT"))
 		decode_splt(data, len);
+	else if (!strcmp(type, "hIST"))
+		decode_hist(data, len);
 }
 
-// __builtin_bswap32() is compiler extension
-// tested on: gcc and clang
 static void read_chunk(FILE *f)
 {
 	int not_iend = 1, i = 1;

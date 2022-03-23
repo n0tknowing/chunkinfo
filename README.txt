@@ -16,3 +16,4 @@ currently supported chunks:
 - sBIT
 - tRNS
 - sPLT
+- hIST
