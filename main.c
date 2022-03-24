@@ -171,7 +171,8 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 {
 	if (len % 3 != 0) {
 		fprintf(stderr, "PLTE: corrupted chunk length\n");
-		fprintf(stderr, "chunk length is expected divisible by 3, but found %u\n", len);
+		fprintf(stderr, "chunk length is expected divisible by 3, but found %u\n",
+				len);
 		exit(1);
 	}
 
@@ -384,7 +385,8 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 
 	data++; l--;
 	uint8_t comp_flag = *data;
-	printf("\tCompression flag = %u (%s)\n", comp_flag, comp_flag == 0 ? "Uncompressed" : "Compressed");
+	char *comp = !!comp_flag ? "compressed" : "uncompressed";
+	printf("\tCompression flag = %u (%s)\n", comp_flag, comp);
 
 	data++; l--;
 	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
@@ -501,7 +503,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	case INDEXED: case RGB:
 		if (len != 3) {
 			fprintf(stderr, "sBIT: corrupted chunk length\n");
-			fprintf(stderr, "expected 3 for color type indexed-color and rgb\n");
+			fprintf(stderr, "expected 3 for color type indexed-color"
+					"and rgb\n");
 			exit(1);
 		}
 
@@ -619,7 +622,8 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 {
 	if (len % 2 != 0) {
 		fprintf(stderr, "hIST: corrupted chunk length\n");
-		fprintf(stderr, "chunk length is expected divisible by 2, but found %u\n", len);
+		fprintf(stderr, "chunk length is expected divisible by 2, but found %u\n",
+				len);
 		exit(1);
 	}
 
@@ -646,7 +650,7 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	uint32_t x, y;
+	uint32_t x = 0, y = 0;
 	memcpy(&x, data, sizeof(uint32_t));
 	memcpy(&y, data + sizeof(uint32_t), sizeof(uint32_t));
 
@@ -694,7 +698,7 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	data++; l--;
 	putchar('\n');
 
-	uint32_t x0, x1;
+	uint32_t x0 = 0, x1 = 0;
 	memcpy(&x0, data, sizeof(uint32_t));
 	x0 = __builtin_bswap32(x0);
 	data += 4;
@@ -710,8 +714,9 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 		"exponential arbitrary base", "hyperbolic sinusoidal",
 		NULL
 	};
+	char *eq_s = eq_type <= 3 ? eqs[eq_type] : "invalid";
 	data++; l--;
-	printf("\tEquation type = %u (%s)\n", eq_type, eq_type <= 3 ? eqs[eq_type] : "invalid");
+	printf("\tEquation type = %u (%s)\n", eq_type, eq_s);
 
 	uint8_t params = *data;
 	data++; l--;
@@ -749,7 +754,7 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 
 	printf("\n");
 
-	uint32_t nframes, nplays;
+	uint32_t nframes = 0, nplays = 0;
 	memcpy(&nframes, data, sizeof(uint32_t));
 	memcpy(&nplays, data + sizeof(uint32_t), sizeof(uint32_t));
 
@@ -770,9 +775,9 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 
 	printf("\n");
 
-	uint32_t buf1[4]; // width, height, x_offset, y_offset;
-	uint16_t buf2[2]; // delay_nums, delay_den;
-	uint8_t buf3[2]; // dispose_op, blend_op;
+	uint32_t buf1[4] = {0}; // width, height, x_offset, y_offset;
+	uint16_t buf2[2] = {0}; // delay_nums, delay_den;
+	uint8_t buf3[2] = {0}; // dispose_op, blend_op;
 	char *dstr[4] = {
 		"None", "Background", "Previous",
 		NULL
