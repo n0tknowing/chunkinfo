@@ -20,6 +20,7 @@ supported chunks
 - sPLT
 - hIST
 - IEND
+- oFFs (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
 

@@ -639,6 +639,26 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	}
 }
 
+static void decode_ext_offs(const uint8_t *data, const uint32_t len)
+{
+	if (len != 9) {
+		fprintf(stderr, "oFFs: corrupted chunk length\n");
+		fprintf(stderr, "chunk length is expected 9, but found %u\n", len);
+		exit(1);
+	}
+
+	uint32_t x, y;
+	memcpy(&x, data, sizeof(uint32_t));
+	memcpy(&y, data + sizeof(uint32_t), sizeof(uint32_t));
+
+	x = __builtin_bswap32(x);
+	y = __builtin_bswap32(y);
+	char *unit = !!data[8] ? "micrometres" : "pixels";
+
+	printf("%d x %d %s", (int32_t)x, (int32_t)y, unit);
+
+}
+
 static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 {
 	if (len != 8) {
@@ -741,6 +761,8 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_splt(data, len);
 	else if (!strcmp(type, "hIST"))
 		decode_hist(data, len);
+	else if (!strcmp(type, "oFFs"))
+		decode_ext_offs(data, len);
 	else if (!strcmp(type, "acTL"))
 		decode_apng_actl(data, len);
 	else if (!strcmp(type, "fcTL"))
