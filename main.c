@@ -113,6 +113,52 @@ static int png_ok(FILE *f)
 	return 0;
 }
 
+static void check_bdepth_coltype(void)
+{
+	switch (color_type) {
+	case GRAY:
+		if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 &&
+		    bit_depth != 8 && bit_depth != 16) {
+			fprintf(stderr, "IHDR: invalid bit depth for grayscale\n");
+			fprintf(stderr, "expected 1, 2, 4, 8, 16, found %u\n", bit_depth);
+			exit(1);
+		}
+		break;
+	case RGB:
+		if (bit_depth != 8 && bit_depth != 16) {
+			fprintf(stderr, "IHDR: invalid bit depth for RGB\n");
+			fprintf(stderr, "expected 8, 16, found %u\n", bit_depth);
+			exit(1);
+		}
+		break;
+	case INDEXED:
+		if (bit_depth != 1 && bit_depth != 2 && bit_depth != 4 && bit_depth != 8) {
+			fprintf(stderr, "IHDR: invalid bit depth for indexed-color\n");
+			fprintf(stderr, "expected 1, 2, 4, 8, found %u\n", bit_depth);
+			exit(1);
+		}
+		break;
+	case GRAY_ALPHA:
+		if (bit_depth != 8 && bit_depth != 16) {
+			fprintf(stderr, "IHDR: invalid bit depth for grayscale+alpha\n");
+			fprintf(stderr, "expected 8, 16, found %u\n", bit_depth);
+			exit(1);
+		}
+		break;
+	case RGB_ALPHA:
+		if (bit_depth != 8 && bit_depth != 16) {
+			fprintf(stderr, "IHDR: invalid bit depth for RGB+alpha\n");
+			fprintf(stderr, "expected 8, 16, found %u\n", bit_depth);
+			exit(1);
+		}
+		break;
+	default:
+		fprintf(stderr, "IHDR: invalid color type\n");
+		exit(1);
+		break;
+	}
+}
+
 static void decode_ihdr(const uint8_t *data, const uint32_t len)
 {
 	if (len != 13) {
@@ -124,8 +170,9 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	printf("\n");
 
 	bit_depth = data[8], color_type = data[9];
-	uint32_t w = 0, h = 0;
+	check_bdepth_coltype();
 
+	uint32_t w = 0, h = 0;
 	memcpy(&w, data, sizeof(uint32_t));
 	memcpy(&h, data + sizeof(uint32_t), sizeof(uint32_t));
 
@@ -153,9 +200,6 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	case RGB_ALPHA:
 		printf("RGB with Alpha channel\n");
 		printf("\tChannels    = 4 per pixel (%u bytes)\n", bit_depth * 4);
-		break;
-	default:
-		printf("unknown\n");
 		break;
 	}
 
@@ -565,7 +609,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		}
 		break;
 	default:
-		fprintf(stderr, "tRNS: invalid color type");
+		fprintf(stderr, "tRNS: only grayscale, rgb, and indexed-color are allowed");
 		exit(1);
 		break;
 	}
@@ -810,10 +854,10 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	printf("\tBlend    = %u (%s)", buf3[1], blend);
 }
 
-#define decode_if(what, func) \
+#define decode_if(what, decode_func) \
 	do {\
 		if (!strcmp(type, what)) { \
-			func(data, len); \
+			decode_func(data, len); \
 			return; \
 		} \
 	} while (0);
