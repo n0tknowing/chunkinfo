@@ -254,11 +254,10 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	x = __builtin_bswap32(x);
 	y = __builtin_bswap32(y);
 
-	uint32_t xdpi = x * 0.0254;
-	uint32_t ydpi = y * 0.0254;
+	uint32_t dpi = x * 0.0254;
 	const char *unit = !!data[8] ? " per meter" : "";
 
-	printf("%u (approx. %u DPI) x %u (approx. %u DPI) pixels%s", x, xdpi , y, ydpi , unit);
+	printf("%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
 }
 
 static void decode_srgb(const uint8_t *data, const uint32_t len)
@@ -904,7 +903,7 @@ static void read_chunk(FILE *f)
 				printf("no data");
 			};
 			putchar('\n');
-			printf("   CRC  = %x\n", chunk_crc);
+			printf("   CRC  = %02x\n", chunk_crc);
 		} else {
 			fprintf(stderr, "chunk %s has corrupted CRC\n", type);
 			fprintf(stderr, "expected %x, got %x\n", check, chunk_crc);
