@@ -136,23 +136,23 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	switch (color_type) {
 	case GRAY:
 		printf("Grayscale\n");
-		printf("\tChannels    = 1 per pixel (%u)\n", bit_depth * 1);
+		printf("\tChannels    = 1 per pixel (%u bytes)\n", bit_depth * 1);
 		break;
 	case RGB:
 		printf("RGB\n");
-		printf("\tChannels    = 3 per pixel (%u)\n", bit_depth * 3);
+		printf("\tChannels    = 3 per pixel (%u bytes)\n", bit_depth * 3);
 		break;
 	case INDEXED:
 		printf("Indexed color\n");
-		printf("\tChannels    = 1 per pixel (%u)\n", bit_depth * 1);
+		printf("\tChannels    = 1 per pixel (%u bytes)\n", bit_depth * 1);
 		break;
 	case GRAY_ALPHA:
 		printf("Grayscale with Alpha channel\n");
-		printf("\tChannels    = 2 per pixel (%u)\n", bit_depth * 2);
+		printf("\tChannels    = 2 per pixel (%u bytes)\n", bit_depth * 2);
 		break;
 	case RGB_ALPHA:
 		printf("RGB with Alpha channel\n");
-		printf("\tChannels    = 4 per pixel (%u)\n", bit_depth * 4);
+		printf("\tChannels    = 4 per pixel (%u bytes)\n", bit_depth * 4);
 		break;
 	default:
 		printf("unknown\n");
