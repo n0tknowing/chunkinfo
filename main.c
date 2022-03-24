@@ -370,11 +370,46 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	}
 }
 
+static void decode_itxt(const uint8_t *data, const uint32_t len)
+{
+	printf("\n");
+
+	uint32_t l = len;
+	printf("\tKeyword = ");
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	putchar('\n');
+
+	data++; l--;
+	uint8_t comp_flag = *data;
+	printf("\tCompression flag = %u (%s)\n", comp_flag, comp_flag == 0 ? "Uncompressed" : "Compressed");
+
+	data++; l--;
+	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
+
+	data++; l--;
+	printf("\tLanguage tag = ");
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	putchar('\n');
+
+	data++; l--;
+	printf("\tTranslated keyword (UTF-8) = ...\n");
+	printf("\tText (UTF-8) = ...");
+}
+
 static void decode_ztxt(const uint8_t *data, const uint32_t len)
 {
 	printf("\n");
-	printf("\tKeyword = ");
+
 	uint32_t l = len;
+	printf("\tKeyword = ");
 	while (*data) {
 		if (isprint(*data))
 			putchar(*data);
@@ -692,6 +727,8 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_iccp(data, len);
 	else if (!strcmp(type, "tEXt"))
 		decode_text(data, len);
+	else if (!strcmp(type, "iTXt"))
+		decode_itxt(data, len);
 	else if (!strcmp(type, "zTXt"))
 		decode_ztxt(data, len);
 	else if (!strcmp(type, "bKGD"))
