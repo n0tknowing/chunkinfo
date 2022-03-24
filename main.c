@@ -1,9 +1,9 @@
 /*
  * chunkinfo - show information of PNG chunks
  *
- * public domain
- *
- * */
+ * chunkinfo has been placed in the public domain.
+ * for details, see https://github.com/n0tknowing/chunkinfo
+ */
 
 #include <ctype.h>
 #include <errno.h>
