@@ -21,6 +21,7 @@ supported chunks
 - hIST
 - IEND
 - oFFs (PNG official extension)
+- sCAL (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
 

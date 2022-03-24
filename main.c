@@ -656,7 +656,29 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	char *unit = !!data[8] ? "micrometres" : "pixels";
 
 	printf("%d x %d %s", (int32_t)x, (int32_t)y, unit);
+}
 
+static void decode_ext_scal(const uint8_t *data, const uint32_t len)
+{
+	uint32_t l = len;
+
+	char *unit = data[0] == 1 ? "meters" : data[0] == 2 ? "radians" : "invalid unit";
+	data++; l--;
+
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	data++; l--;
+	printf(" x ");
+
+	while (l > 0) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	printf(" (%s)", unit);
 }
 
 static void decode_apng_actl(const uint8_t *data, const uint32_t len)
@@ -763,6 +785,8 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_hist(data, len);
 	else if (!strcmp(type, "oFFs"))
 		decode_ext_offs(data, len);
+	else if (!strcmp(type, "sCAL"))
+		decode_ext_scal(data, len);
 	else if (!strcmp(type, "acTL"))
 		decode_apng_actl(data, len);
 	else if (!strcmp(type, "fcTL"))
