@@ -22,6 +22,7 @@ supported chunks
 - IEND
 - oFFs (PNG official extension)
 - sCAL (PNG official extension)
+- pCAL (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
 

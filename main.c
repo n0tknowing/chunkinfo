@@ -681,6 +681,65 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 	printf(" (%s)", unit);
 }
 
+static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
+{
+	printf("\n");
+	uint32_t l = len;
+
+	printf("\tCalibration name = ");
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	data++; l--;
+	putchar('\n');
+
+	uint32_t x0, x1;
+	memcpy(&x0, data, sizeof(uint32_t));
+	x0 = __builtin_bswap32(x0);
+	data += 4;
+	memcpy(&x1, data, sizeof(uint32_t));
+	x1 = __builtin_bswap32(x1);
+	data += 4;
+
+	printf("\tLinear conversion = %d x %d\n", (int32_t)x0, (int32_t)x1);
+
+	uint8_t eq_type = *data;
+	char *eqs[] = {
+		"linear", "exponential",
+		"exponential arbitrary base", "hyperbolic sinusoidal",
+		NULL
+	};
+	data++; l--;
+	printf("\tEquation type = %u (%s)\n", eq_type, eq_type <= 3 ? eqs[eq_type] : "invalid");
+
+	uint8_t params = *data;
+	data++; l--;
+	printf("\tParameters = %u\n", params);
+
+	printf("\tUnit name = ");
+	while (*data) {
+		if (isprint(*data))
+			putchar(*data);
+		data++; l--;
+	}
+	putchar('\n');
+	data++; l--;
+
+	printf("\tValues = ");
+	for (uint8_t i = 0; i < params; i++) {
+		while (*data) {
+			if (isprint(*data))
+				putchar(*data);
+			data++; l--;
+		}
+		if (i < params - 1)
+			printf(", ");
+		data++; l--;
+	}
+}
+
 static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 {
 	if (len != 8) {
@@ -787,6 +846,8 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 		decode_ext_offs(data, len);
 	else if (!strcmp(type, "sCAL"))
 		decode_ext_scal(data, len);
+	else if (!strcmp(type, "pCAL"))
+		decode_ext_pcal(data, len);
 	else if (!strcmp(type, "acTL"))
 		decode_apng_actl(data, len);
 	else if (!strcmp(type, "fcTL"))
