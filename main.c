@@ -620,7 +620,7 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 {
 	if (len % 2 != 0) {
 		fprintf(stderr, "hIST: corrupted chunk length\n");
-		fprintf(stderr, "chunk length is expected divisible by 2\n");
+		fprintf(stderr, "chunk length is expected divisible by 2, but found %u\n", len);
 		exit(1);
 	}
 
