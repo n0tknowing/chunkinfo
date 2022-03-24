@@ -872,10 +872,11 @@ static void read_chunk(FILE *f)
 			not_iend = 0;
 
 		uint32_t check = pd_crc32(0u, type, 4); // type
+
 		// read chunk data
-		printf("   Data = ");
+		uint8_t *data = NULL;
 		if (size > 0) {
-			uint8_t *data = malloc(size);
+			data = malloc(size);
 			if (!data) {
 				fprintf(stderr, "failed to allocate chunk data\n");
 				exit(1);
@@ -886,11 +887,6 @@ static void read_chunk(FILE *f)
 				exit(1);
 			}
 			check = pd_crc32(check, data, size);  // data
-			decode_chunk_data(data, type, size);
-			putchar('\n');
-			free(data);
-		} else {
-			printf("no data\n");
 		}
 
 		// read chunk crc
@@ -900,10 +896,20 @@ static void read_chunk(FILE *f)
 			exit(1);
 		}
 		if (chunk_crc == check) {
+			printf("   Data = ");
+			if (data) {
+				decode_chunk_data(data, type, size);
+				free(data);
+			} else {
+				printf("no data");
+			};
+			putchar('\n');
 			printf("   CRC  = %x\n", chunk_crc);
 		} else {
 			fprintf(stderr, "chunk %s has corrupted CRC\n", type);
 			fprintf(stderr, "expected %x, got %x\n", check, chunk_crc);
+			if (data)
+				free(data);
 			exit(1);
 		}
 
