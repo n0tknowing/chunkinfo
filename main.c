@@ -806,52 +806,45 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	printf("\tBlend    = %u (%s)", buf3[1], blend);
 }
 
+#define decode_if(what, func) \
+	do {\
+		if (!strcmp(type, what)) { \
+			func(data, len); \
+			return; \
+		} \
+	} while (0);
+
 static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
 {
-	if (!strcmp(type, "IHDR"))
-		decode_ihdr(data, len);
-	else if (!strcmp(type, "PLTE"))
-		decode_plte(data, len);
-	else if (!strcmp(type, "IDAT"))
-		decode_idat(data, len);
-	else if (!strcmp(type, "tIME"))
-		decode_time(data, len);
-	else if (!strcmp(type, "pHYs"))
-		decode_phys(data, len);
-	else if (!strcmp(type, "sRGB"))
-		decode_srgb(data, len);
-	else if (!strcmp(type, "gAMA"))
-		decode_gama(data, len);
-	else if (!strcmp(type, "cHRM"))
-		decode_chrm(data, len);
-	else if (!strcmp(type, "iCCP"))
-		decode_iccp(data, len);
-	else if (!strcmp(type, "tEXt"))
-		decode_text(data, len);
-	else if (!strcmp(type, "iTXt"))
-		decode_itxt(data, len);
-	else if (!strcmp(type, "zTXt"))
-		decode_ztxt(data, len);
-	else if (!strcmp(type, "bKGD"))
-		decode_bkgd(data, len);
-	else if (!strcmp(type, "sBIT"))
-		decode_sbit(data, len);
-	else if (!strcmp(type, "tRNS"))
-		decode_trns(data, len);
-	else if (!strcmp(type, "sPLT"))
-		decode_splt(data, len);
-	else if (!strcmp(type, "hIST"))
-		decode_hist(data, len);
-	else if (!strcmp(type, "oFFs"))
-		decode_ext_offs(data, len);
-	else if (!strcmp(type, "sCAL"))
-		decode_ext_scal(data, len);
-	else if (!strcmp(type, "pCAL"))
-		decode_ext_pcal(data, len);
-	else if (!strcmp(type, "acTL"))
-		decode_apng_actl(data, len);
-	else if (!strcmp(type, "fcTL"))
-		decode_apng_fctl(data, len);
+	/* Critical chunks */
+	decode_if("IHDR", decode_ihdr);
+	decode_if("PLTE", decode_plte);
+	decode_if("IDAT", decode_idat);
+
+	/* ancillary chunks */
+	decode_if("tIME", decode_time);
+	decode_if("pHYs", decode_phys);
+	decode_if("sRGB", decode_srgb);
+	decode_if("gAMA", decode_gama);
+	decode_if("cHRM", decode_chrm);
+	decode_if("iCCP", decode_iccp);
+	decode_if("tEXt", decode_text);
+	decode_if("iTXt", decode_itxt);
+	decode_if("zTXt", decode_ztxt);
+	decode_if("bKGD", decode_bkgd);
+	decode_if("sBIT", decode_sbit);
+	decode_if("tRNS", decode_trns);
+	decode_if("sPLT", decode_splt);
+	decode_if("hIST", decode_hist);
+
+	/* official PNG extension chunks */
+	decode_if("oFFs", decode_ext_offs);
+	decode_if("sCAL", decode_ext_scal);
+	decode_if("pCAL", decode_ext_pcal);
+
+	/* APNG */
+	decode_if("acTL", decode_apng_actl);
+	decode_if("fcTL", decode_apng_fctl);
 }
 
 static void read_chunk(FILE *f)
