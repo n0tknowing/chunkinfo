@@ -248,6 +248,22 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	printf("\tInterlace = %u (%s interlace)", data[12], interlace);
 }
 
+/*
+ * PLTE
+ *
+ * n = chunk length
+ * palette entry = n / 3
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      red color
+ *   1      uint8     1      green color
+ *   2      uint8     1      blue color
+ *  ...
+ * n - 2    uint8     1      red color
+ * n - 1    uint8     1      green color
+ *   n      uint8     1      blue color
+ */
 static void decode_plte(const uint8_t *data, const uint32_t len)
 {
 	if (len % 3 != 0) {
