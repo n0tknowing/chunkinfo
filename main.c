@@ -185,8 +185,6 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	printf("\n");
-
 	bit_depth = data[8], color_type = data[9];
 	check_bdepth_coltype();
 
@@ -194,30 +192,30 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	memcpy(&w, data, sizeof(uint32_t));
 	memcpy(&h, data + sizeof(uint32_t), sizeof(uint32_t));
 
-	printf("\tWidth       = %u\n", __builtin_bswap32(w));
-	printf("\tHeight      = %u\n", __builtin_bswap32(h));
-	printf("\tBit depth   = %u per channel\n", bit_depth);
-	printf("\tColor type  = ");
+	printf("\tWidth = %u\n", __builtin_bswap32(w));
+	printf("\tHeight = %u\n", __builtin_bswap32(h));
+	printf("\tBit depth = %u per channel\n", bit_depth);
+	printf("\tColor type = ");
 	switch (color_type) {
 	case GRAY:
 		printf("Grayscale\n");
-		printf("\tChannels    = 1 per pixel (%u bytes)\n", bit_depth * 1);
+		printf("\tChannels = 1 per pixel (%u bytes)\n", bit_depth * 1);
 		break;
 	case RGB:
 		printf("RGB\n");
-		printf("\tChannels    = 3 per pixel (%u bytes)\n", bit_depth * 3);
+		printf("\tChannels = 3 per pixel (%u bytes)\n", bit_depth * 3);
 		break;
 	case INDEXED:
 		printf("Indexed color\n");
-		printf("\tChannels    = 1 per pixel (%u bytes)\n", bit_depth * 1);
+		printf("\tChannels = 1 per pixel (%u bytes)\n", bit_depth * 1);
 		break;
 	case GRAY_ALPHA:
 		printf("Grayscale with Alpha channel\n");
-		printf("\tChannels    = 2 per pixel (%u bytes)\n", bit_depth * 2);
+		printf("\tChannels = 2 per pixel (%u bytes)\n", bit_depth * 2);
 		break;
 	case RGB_ALPHA:
 		printf("RGB with Alpha channel\n");
-		printf("\tChannels    = 4 per pixel (%u bytes)\n", bit_depth * 4);
+		printf("\tChannels = 4 per pixel (%u bytes)\n", bit_depth * 4);
 		break;
 	}
 
@@ -225,8 +223,8 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	const char *filter = data[11] == 0 ? "adaptive filtering" : "unknown";
 	const char *interlace = data[12] == 0 ? "no" : "Adam7";
 	printf("\tCompression = %u (%s)\n", data[10], compression);
-	printf("\tFilter      = %u (%s)\n", data[11], filter);
-	printf("\tInterlace   = %u (%s interlace)", data[12], interlace);
+	printf("\tFilter = %u (%s)\n", data[11], filter);
+	printf("\tInterlace = %u (%s interlace)", data[12], interlace);
 }
 
 static void decode_plte(const uint8_t *data, const uint32_t len)
@@ -239,7 +237,7 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	}
 
 	plt_entry = len / 3;
-	printf("Entries = %u\n", plt_entry);
+	printf("\tEntries = %u\n", plt_entry);
 
 	// fill color
 	for (uint32_t i = 0, col = 0; i < plt_entry; i++, col += 3) {
@@ -259,6 +257,8 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 
 static void decode_idat(const uint8_t *data, const uint32_t len)
 {
+	printf("\t");
+
 #if _DECODE_IDAT
 	FILE *f = fopen("idat.z", "ab");
 	if (!f) {
@@ -271,9 +271,10 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 	}
 
 	fclose(f);
-	printf("see idat.z");
+	printf("See idat.z");
 #else
 	(void)data; (void)len;
+	printf("......");
 #endif
 }
 
@@ -299,7 +300,7 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 
 	char buf[100] = {0};
 	if (strftime(buf, 99, "%A, %d %b %Y - %I:%M %p", &t))
-		printf("%s", buf);
+		printf("\tLast modification = %s", buf);
 }
 
 static void decode_phys(const uint8_t *data, const uint32_t len)
@@ -320,7 +321,7 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	uint32_t dpi = x * 0.0254;
 	const char *unit = !!data[8] ? " per meter" : "";
 
-	printf("%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
+	printf("\t%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
 }
 
 static void decode_srgb(const uint8_t *data, const uint32_t len)
@@ -339,11 +340,13 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 		NULL
 	};
 
+	printf("\t");
+
 	int intent = data[0];
 	if (intent >= 0 && intent <= 3)
-		printf("%s intent (%d)", srgb_data[intent], intent);
+		printf("%d intent (%s)", intent, srgb_data[intent]);
 	else
-		printf("Unknown intent (%d)", intent);
+		printf("%d (Unknown intent)", intent);
 }
 
 static void decode_gama(const uint8_t *data, const uint32_t len)
@@ -357,7 +360,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 	uint32_t gama = 0;
 	memcpy(&gama, data, sizeof(uint32_t));
 
-	printf("%01.05f", (float)__builtin_bswap32(gama) / 100000);
+	printf("\tGamma = %01.05f", (float)__builtin_bswap32(gama) / 100000);
 }
 
 static void decode_chrm(const uint8_t *data, const uint32_t len)
@@ -377,15 +380,14 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 		offset += sizeof(uint32_t);
 	}
 
-	printf("\n");
-	printf("\tWhite point x  = %01.05f\n", (float)res[0] / 100000);
-	printf("\tWhite point y  = %01.05f\n", (float)res[1] / 100000);
-	printf("\tRed x          = %01.05f\n", (float)res[2] / 100000);
-	printf("\tRed y          = %01.05f\n", (float)res[3] / 100000);
-	printf("\tBlue x         = %01.05f\n", (float)res[4] / 100000);
-	printf("\tBlue y         = %01.05f\n", (float)res[5] / 100000);
-	printf("\tGreen x        = %01.05f\n", (float)res[6] / 100000);
-	printf("\tGreen y        = %01.05f", (float)res[7] / 100000);
+	printf("\tWhite point x = %01.05f\n", (float)res[0] / 100000);
+	printf("\tWhite point y = %01.05f\n", (float)res[1] / 100000);
+	printf("\tRed x = %01.05f\n", (float)res[2] / 100000);
+	printf("\tRed y = %01.05f\n", (float)res[3] / 100000);
+	printf("\tBlue x = %01.05f\n", (float)res[4] / 100000);
+	printf("\tBlue y = %01.05f\n", (float)res[5] / 100000);
+	printf("\tGreen x = %01.05f\n", (float)res[6] / 100000);
+	printf("\tGreen y = %01.05f", (float)res[7] / 100000);
 }
 
 static void decode_iccp(const uint8_t *data, const uint32_t len)
@@ -396,8 +398,6 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 		fprintf(stderr, "iCCP: cannot get profile name\n");
 		exit(1);
 	}
-
-	printf("\n");
 
 	printf("\tProfile name = %s\n", profile_name);
 	free(profile_name);
@@ -422,14 +422,12 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	printf("\n");
-
 	printf("\tKeyword = %s\n", keyword);
 	free(keyword);
 	data += i; l -= i;
 
 	data++; l--;
-	printf("\tText    = ");
+	printf("\tText = ");
 	while (l > 0) {
 		if (isprint(*data))
 			putchar(*data);
@@ -445,8 +443,6 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 		fprintf(stderr, "iTXt: cannot get keyword\n");
 		exit(1);
 	}
-
-	printf("\n");
 
 	printf("\tKeyword = %s\n", keyword);
 	free(keyword);
@@ -483,8 +479,6 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	printf("\n");
-
 	printf("\tKeyword = %s\n", keyword);
 	free(keyword);
 	data += i; l -= i;
@@ -500,6 +494,8 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 
 static void decode_bkgd(const uint8_t *data, const uint32_t len)
 {
+	printf("\t");
+
 	switch (color_type) {
 	case GRAY: case GRAY_ALPHA:
 		if (len != 2) {
@@ -509,11 +505,11 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		}
 
 		if (bit_depth < 16) {
-			printf("%u", data[1]);
+			printf("Gray level = %u", data[1]);
 		} else {
 			uint16_t val = 0;
 			memcpy(&val, data, sizeof(uint16_t));
-			printf("%u", __builtin_bswap16(val));
+			printf("Gray level = %u", __builtin_bswap16(val));
 		}
 		break;
 	case RGB: case RGB_ALPHA:
@@ -523,11 +519,12 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
+		printf("Color = ");
 		if (bit_depth < 16) {
-			printf("%02x %02x %02x", data[1], data[3], data[5]);
+			printf("#%02x%02x%02x", data[1], data[3], data[5]);
 		} else {
-			printf("%02x%02x ", data[0], data[1]);
-			printf("%02x%02x ", data[2], data[3]);
+			printf("#%02x%02x", data[0], data[1]);
+			printf("%02x%02x", data[2], data[3]);
 			printf("%02x%02x", data[4], data[5]);
 		}
 		break;
@@ -539,8 +536,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		}
 
 		uint32_t i = data[0];
-		printf("%u ", i);
-		printf("(#%02x%02x%02x)", plt[i][0], plt[i][1], plt[i][2]);
+		printf("index %u, with color ", i);
+		printf("#%02x%02x%02x", plt[i][0], plt[i][1], plt[i][2]);
 		break;
 	}
 	default:
@@ -552,6 +549,8 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 
 static void decode_sbit(const uint8_t *data, const uint32_t len)
 {
+	printf("\tSignificant bits = ");
+
 	switch (color_type) {
 	case GRAY:
 		if (len != 1) {
@@ -560,7 +559,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		printf("%u", data[0]);
+		printf("gray(%u)", data[0]);
 		break;
 	case GRAY_ALPHA:
 		if (len != 2) {
@@ -569,7 +568,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		printf("%u %u", data[0], data[1]);
+		printf("gray(%u), alpha(%u)", data[0], data[1]);
 		break;
 	case INDEXED: case RGB:
 		if (len != 3) {
@@ -579,7 +578,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		printf("%u %u %u", data[0], data[1], data[2]);
+		printf("red(%u), green(%u), blue(%u)", data[0], data[1], data[2]);
 		break;
 	case RGB_ALPHA:
 		if (len != 4) {
@@ -588,7 +587,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		printf("%u %u %u %u", data[0], data[1], data[2], data[3]);
+		printf("red(%u) green(%u) blue(%u) alpha(%u)",
+				data[0], data[1], data[2], data[3]);
 		break;
 	default:
 		fprintf(stderr, "sBIT: invalid color type");
@@ -599,6 +599,8 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 
 static void decode_trns(const uint8_t *data, const uint32_t len)
 {
+	printf("\t");
+
 	switch (color_type) {
 	case GRAY: {
 		if (len != 2) {
@@ -610,7 +612,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		uint16_t val = 0;
 		memcpy(&val, data, sizeof(uint16_t));
 		val = __builtin_bswap16(val);
-		printf("%u", val);
+		printf("gray(%u)", val);
 		break;
 	}
 	case RGB:
@@ -621,11 +623,12 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		}
 
 		if (bit_depth < 16) {
-			printf("%02x %02x %02x", data[1], data[3], data[5]);
+			printf("red(%02x), green(%02x), blue(%02x)",
+					data[1], data[3], data[5]);
 		} else {
-			printf("%02x%02x ", data[0], data[1]);
-			printf("%02x%02x ", data[2], data[3]);
-			printf("%02x%02x", data[4], data[5]);
+			printf("red(%02x%02x), ", data[0], data[1]);
+			printf("green(%02x%02x), ", data[2], data[3]);
+			printf("blue(%02x%02x)", data[4], data[5]);
 		}
 		break;
 	case INDEXED:
@@ -650,8 +653,6 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 		fprintf(stderr, "sPLT: cannot get palette name\n");
 		exit(1);
 	}
-
-	printf("\n");
 
 	printf("\tPalette name   = %s\n", palette_name);
 	free(palette_name);
@@ -706,7 +707,7 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	}
 
 	const uint32_t entry = len / 2;
-	printf("Entries = %u\n", entry);
+	printf("\tEntries = %u\n", entry);
 
 	for (uint32_t i = 0, nl = 1; i < entry; i++, nl++) {
 		printf("\t[%03u] %u  ", i, data[i]);
@@ -731,7 +732,7 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	y = __builtin_bswap32(y);
 	char *unit = !!data[8] ? "micrometres" : "pixels";
 
-	printf("%d x %d %s", (int32_t)x, (int32_t)y, unit);
+	printf("\tImage position = %d x %d %s", (int32_t)x, (int32_t)y, unit);
 }
 
 static void decode_ext_scal(const uint8_t *data, const uint32_t len)
@@ -740,6 +741,8 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 
 	char *unit = data[0] == 1 ? "meters" : data[0] == 2 ? "radians" : "invalid unit";
 	data++; l--;
+
+	printf("\tPhysical scale = ");
 
 	while (*data) {
 		if (isprint(*data))
@@ -765,8 +768,6 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 		fprintf(stderr, "pCAL: cannot get calibration name\n");
 		exit(1);
 	}
-
-	printf("\n");
 
 	printf("\tCalibration name = %s\n", name);
 	free(name); name = NULL;
@@ -828,8 +829,6 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	printf("\n");
-
 	uint32_t nframes = 0, nplays = 0;
 	memcpy(&nframes, data, sizeof(uint32_t));
 	memcpy(&nplays, data + sizeof(uint32_t), sizeof(uint32_t));
@@ -848,8 +847,6 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 		fprintf(stderr, "chunk length is expected 26, but found %u\n", len);
 		exit(1);
 	}
-
-	printf("\n");
 
 	uint32_t buf1[4] = {0}; // width, height, x_offset, y_offset;
 	uint16_t buf2[2] = {0}; // delay_nums, delay_den;
@@ -925,6 +922,9 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 	/* APNG */
 	decode_if("acTL", decode_apng_actl);
 	decode_if("fcTL", decode_apng_fctl);
+
+	/* no decoder yet... */
+	printf("\t.....");
 }
 
 static void read_chunk(FILE *f)
@@ -939,6 +939,13 @@ static void read_chunk(FILE *f)
 			exit(1);
 		}
 
+		// get current chunk offset
+		long offset = ftell(f);
+		if (offset < 0) {
+			perror("failed to get chunk offset");
+			exit(1);
+		}
+
 		// read chunk type
 		char type[5];
 		if (fread(type, sizeof(char), 4, f) != 4) {
@@ -947,12 +954,12 @@ static void read_chunk(FILE *f)
 		}
 		type[4] = 0;
 
-		printf("%d. Type = %s, Length = %u\n", i, type, size);
 		if (!strcmp(type, "IEND"))
 			not_iend = 0;
 
 		if (size > INT_MAX - 1) {
-			fprintf(stderr, "%s: chunk length is too large: %u\n", type, size);
+			fprintf(stderr, "%s: chunk length is too large: %u\n",
+					type, size);
 			fprintf(stderr, "maximum length is %u\n", INT_MAX - 1);
 			exit(1);
 		}
@@ -985,15 +992,15 @@ static void read_chunk(FILE *f)
 			exit(1);
 		}
 		if (chunk_crc == check) {
-			printf("   Data = ");
+			printf("   [%s] length %u at offset 0x%08lx (%04x)\n",
+					type, size, offset, chunk_crc);
 			if (data) {
 				decode_chunk_data(data, type, size);
 				free(data);
 			} else {
-				printf("no data");
+				printf("\tNo data");
 			};
 			putchar('\n');
-			printf("   CRC  = %02x\n", chunk_crc);
 		} else {
 			fprintf(stderr, "%s: corrupted CRC\n", type);
 			fprintf(stderr, "expected %x, got %x\n", check, chunk_crc);
@@ -1002,10 +1009,12 @@ static void read_chunk(FILE *f)
 			exit(1);
 		}
 
-		if (not_iend)
-			putchar('\n');
 		i++;
+		printf("\n");
 	}
+
+	printf("All OK.\n");
+	printf("Found %d chunks from file ", i);
 }
 
 static int run(int argc, char **argv)
@@ -1024,6 +1033,7 @@ static int run(int argc, char **argv)
 
 	if (png_ok(f)) {
 		read_chunk(f);
+		printf("%s\n", argv[1]);
 	} else {
 		errno = EINVAL;
 		fprintf(stderr, "%s is not a valid PNG file\n", argv[1]);
