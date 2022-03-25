@@ -435,6 +435,20 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 	printf("\tGamma = %01.05f", (float)__builtin_bswap32(gama) / 100000);
 }
 
+/*
+ * cHRM
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    4      white point x
+ * 4 - 7    uint32    4      white point y
+ * 8 - 11   uint32    4      red x
+ * 12 - 15  uint32    4      red y
+ * 16 - 19  uint32    4      green x
+ * 20 - 23  uint32    4      green y
+ * 24 - 27  uint32    4      blue x
+ * 28 - 31  uint32    4      blue y
+ */
 static void decode_chrm(const uint8_t *data, const uint32_t len)
 {
 	if (len != 32) {
