@@ -87,6 +87,8 @@ Found 8 chunks from file test.apng
 - https://wiki.mozilla.org/APNG_Specification
 - https://philip.html5.org/tests/apng/tests.html
 - https://github.com/skeeto/scratch/tree/master/pngattach
+- http://www.libpng.org/pub/png/apps/pngcheck.html
+- https://www.nayuki.io/page/png-file-chunk-inspector
 ```
 
 ### Notes
