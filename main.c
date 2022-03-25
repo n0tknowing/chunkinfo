@@ -654,16 +654,16 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	printf("\tPalette name   = %s\n", palette_name);
+	printf("\tPalette name = %s\n", palette_name);
 	free(palette_name);
 	data += i; l -= i;
 
 	data++; l--;
 	uint8_t sample_depth = *data;
-	printf("\tSample depth   = %u\n", sample_depth);
+	printf("\tSample depth = %u\n", sample_depth);
 
 	data++; l--;
-	printf("\tEntry          = ");
+	printf("\tEntry = ");
 	if (sample_depth == 8 && (l % 6) == 0) {
 		uint32_t entry = l / 6;
 		printf("%u\n", entry);
@@ -837,7 +837,7 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	nplays = __builtin_bswap32(nplays);
 
 	printf("\tNumber of frames = %u\n", nframes);
-	printf("\tNumber of plays  = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
+	printf("\tNumber of plays = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
 }
 
 static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
@@ -874,13 +874,13 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	char *dispose = (buf3[0] <= 3) ? dstr[buf3[0]] : "Invalid";
 	char *blend = buf3[1] == 0 ? "Source" : buf3[1] == 1 ? "Over" : "Invalid";
 
-	printf("\tWidth    = %u\n", buf1[0]);
-	printf("\tHeight   = %u\n", buf1[1]);
+	printf("\tWidth = %u\n", buf1[0]);
+	printf("\tHeight = %u\n", buf1[1]);
 	printf("\tX offset = %u\n", buf1[2]);
 	printf("\tY offset = %u\n", buf1[3]);
-	printf("\tDelays   = %u (denominator %u)\n", buf2[0], buf2[1]);
+	printf("\tDelays = %u (denominator %u)\n", buf2[0], buf2[1]);
 	printf("\tDisposal = %u (%s)\n", buf3[0], dispose);
-	printf("\tBlend    = %u (%s)", buf3[1], blend);
+	printf("\tBlend = %u (%s)", buf3[1], blend);
 }
 
 static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
