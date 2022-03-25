@@ -414,6 +414,13 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 		printf("%d (Unknown intent)", intent);
 }
 
+/*
+ * gAMA
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    1      gamma value
+ */
 static void decode_gama(const uint8_t *data, const uint32_t len)
 {
 	if (len != 4) {
