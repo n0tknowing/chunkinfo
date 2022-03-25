@@ -72,6 +72,7 @@ Found 8 chunks from file test.apng
 - oFFs (PNG official extension)
 - sCAL (PNG official extension)
 - pCAL (PNG official extension)
+- gIFx (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
 ```
