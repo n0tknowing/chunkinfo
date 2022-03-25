@@ -382,6 +382,13 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	printf("\t%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
 }
 
+/*
+ * sRGB
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      rendering intent (0,1,2,3)
+ */
 static void decode_srgb(const uint8_t *data, const uint32_t len)
 {
 	if (len != 1) {
