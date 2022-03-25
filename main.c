@@ -352,6 +352,15 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 		printf("\tLast modification = %s", buf);
 }
 
+/*
+ * pHYs
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    4      x axis
+ * 4 - 7    uint32    4      y axis
+ *   8      uint8     1      unit (0=pixel,1=meter)
+ */
 static void decode_phys(const uint8_t *data, const uint32_t len)
 {
 	if (len != 9) {
