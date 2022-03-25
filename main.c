@@ -7,6 +7,7 @@
 
 #include <ctype.h>
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -934,7 +935,7 @@ static void read_chunk(FILE *f)
 		// read chunk size
 		uint32_t size = fread_u32(f);
 		if (errno) {
-			fprintf(stderr, "error: %s\n", strerror(errno));
+			perror("failed to read chunk length");
 			exit(1);
 		}
 
@@ -944,11 +945,17 @@ static void read_chunk(FILE *f)
 			fprintf(stderr, "failed to read chunk type\n");
 			exit(1);
 		}
-
 		type[4] = 0;
+
 		printf("%d. Type = %s, Length = %u\n", i, type, size);
 		if (!strcmp(type, "IEND"))
 			not_iend = 0;
+
+		if (size > INT_MAX - 1) {
+			fprintf(stderr, "%s: chunk length is too large: %u\n", type, size);
+			fprintf(stderr, "maximum length is %u\n", INT_MAX - 1);
+			exit(1);
+		}
 
 		uint32_t check = pd_crc32(0u, type, 4); // type
 
@@ -957,11 +964,13 @@ static void read_chunk(FILE *f)
 		if (size > 0) {
 			data = malloc(size);
 			if (!data) {
-				fprintf(stderr, "failed to allocate chunk data\n");
+				fprintf(stderr, "%s: ", type);
+				perror("failed to read chunk data");
 				exit(1);
 			}
 			if (fread(data, sizeof(uint8_t), size, f) != size) {
-				fprintf(stderr, "failed to read chunk data\n");
+				fprintf(stderr, "%s: ", type);
+				perror("failed to read chunk data");
 				free(data);
 				exit(1);
 			}
@@ -971,7 +980,8 @@ static void read_chunk(FILE *f)
 		// read chunk crc
 		uint32_t chunk_crc = fread_u32(f);
 		if (errno) {
-			fprintf(stderr, "error read crc: %s\n", strerror(errno));
+			fprintf(stderr, "%s: ", type);
+			perror("failed to read chunk crc");
 			exit(1);
 		}
 		if (chunk_crc == check) {
@@ -985,7 +995,7 @@ static void read_chunk(FILE *f)
 			putchar('\n');
 			printf("   CRC  = %02x\n", chunk_crc);
 		} else {
-			fprintf(stderr, "chunk %s has corrupted CRC\n", type);
+			fprintf(stderr, "%s: corrupted CRC\n", type);
 			fprintf(stderr, "expected %x, got %x\n", check, chunk_crc);
 			if (data)
 				free(data);
