@@ -1,7 +1,7 @@
-# chunkinfo - show information of PNG chunks
+chunkinfo - show information of PNG chunks
 
-### Example
-```
+example
+-------
 $ make
 $ chunkinfo test.apng
    [IHDR] length 13 at offset 0x0000000c (f1fde38f)
@@ -28,7 +28,7 @@ $ chunkinfo test.apng
 	Blend = 1 (Over)
 
    [IDAT] length 1085 at offset 0x0000005f (80ad91a6)
-	......
+	Image data
 
    [fcTL] length 26 at offset 0x000004a8 (6257f46c)
 	Width = 23
@@ -47,10 +47,9 @@ $ chunkinfo test.apng
 
 All OK.
 Found 8 chunks from file test.apng
-```
 
-### Supported chunks
-```
+supported chunks
+----------------
 - IHDR
 - PLTE
 - IDAT (with -D_DECODE_IDAT, but only created a zlib file, so you need to manually decompress the zlib file)
@@ -77,10 +76,9 @@ Found 8 chunks from file test.apng
 - sTER (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
-```
 
-### References
-```
+references
+----------
 - http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
 - https://www.w3.org/TR/2003/REC-PNG-20031110
 - http://www.libpng.org/pub/png/book/toc.html
@@ -90,9 +88,11 @@ Found 8 chunks from file test.apng
 - https://github.com/skeeto/scratch/tree/master/pngattach
 - http://www.libpng.org/pub/png/apps/pngcheck.html
 - https://www.nayuki.io/page/png-file-chunk-inspector
-```
+- https://exiftool.org/TagNames/PNG.html
+- https://w3c.github.io/PNG-spec
 
-### Notes
+notes
+-----
 This software is far from perfect, no chunk checking like chunk ordering
 of IDAT and PLTE, because there are chunks that need to appear before
 IDAT and PLTE like cHRM, gAMA, and iCPP.

@@ -274,7 +274,7 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 	printf("See idat.z");
 #else
 	(void)data; (void)len;
-	printf("......");
+	printf("Image data");
 #endif
 }
 
