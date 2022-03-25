@@ -883,6 +883,19 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	printf("\tBlend    = %u (%s)", buf3[1], blend);
 }
 
+static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
+{
+	if (len < 11) {
+		fprintf(stderr, "gIFx: invalid chunk length\n");
+		fprintf(stderr, "expected at least 11, but found %u\n", len);
+		exit(1);
+	}
+
+	printf("\tApplication ID = %.*s\n", 8, (char *)data);
+	printf("\tAuthentication code = %02x%02x%02x\n", data[8], data[9], data[10]);
+	printf("\tApplication data = .....");
+}
+
 #define decode_if(what, decode_func) \
 	do {\
 		if (!strcmp(type, what)) { \
@@ -918,6 +931,7 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 	decode_if("oFFs", decode_ext_offs);
 	decode_if("sCAL", decode_ext_scal);
 	decode_if("pCAL", decode_ext_pcal);
+	decode_if("gIFx", decode_ext_gifx);
 
 	/* APNG */
 	decode_if("acTL", decode_apng_actl);
