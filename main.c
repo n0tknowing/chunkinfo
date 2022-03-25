@@ -100,6 +100,23 @@ static uint32_t fread_u32(FILE *f)
 	return __builtin_bswap32(ret);
 }
 
+static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
+{
+	size_t i = 0;
+	char *ret = calloc(80, 1);
+	if (!ret)
+		return NULL;
+
+	while (*data) {
+		if (isprint(*data))
+			ret[i] = *data;
+		data++; i++;
+	}
+	*len = i;
+
+	return ret;
+}
+
 static int png_ok(FILE *f)
 {
 	const uint8_t sign[8] = { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a };
@@ -372,16 +389,18 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 
 static void decode_iccp(const uint8_t *data, const uint32_t len)
 {
+	uint32_t l = len, i = 0;
+	char *profile_name = get_name_or_keyword(data, &i);
+	if (!profile_name) {
+		fprintf(stderr, "iCCP: cannot get profile name\n");
+		exit(1);
+	}
+
 	printf("\n");
 
-	uint32_t l = len;
-	printf("\tProfile name = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	printf("\tProfile name = %s\n", profile_name);
+	free(profile_name);
+	data += i; l -= i;
 
 	data++; l--;
 	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
@@ -394,16 +413,19 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 
 static void decode_text(const uint8_t *data, const uint32_t len)
 {
+
+	uint32_t l = len, i = 0;
+	char *keyword = get_name_or_keyword(data, &i);
+	if (!keyword) {
+		fprintf(stderr, "tEXt: cannot get keyword\n");
+		exit(1);
+	}
+
 	printf("\n");
 
-	uint32_t l = len;
-	printf("\tKeyword = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	printf("\tKeyword = %s\n", keyword);
+	free(keyword);
+	data += i; l -= i;
 
 	data++; l--;
 	printf("\tText    = ");
@@ -416,16 +438,18 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 
 static void decode_itxt(const uint8_t *data, const uint32_t len)
 {
+	uint32_t l = len, i = 0;
+	char *keyword = get_name_or_keyword(data, &i);
+	if (!keyword) {
+		fprintf(stderr, "iTXt: cannot get keyword\n");
+		exit(1);
+	}
+
 	printf("\n");
 
-	uint32_t l = len;
-	printf("\tKeyword = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	printf("\tKeyword = %s\n", keyword);
+	free(keyword);
+	data += i; l -= i;
 
 	data++; l--;
 	uint8_t comp_flag = *data;
@@ -451,16 +475,18 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 
 static void decode_ztxt(const uint8_t *data, const uint32_t len)
 {
+	uint32_t l = len, i = 0;
+	char *keyword = get_name_or_keyword(data, &i);
+	if (!keyword) {
+		fprintf(stderr, "zTXt: cannot get keyword\n");
+		exit(1);
+	}
+
 	printf("\n");
 
-	uint32_t l = len;
-	printf("\tKeyword = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	printf("\tKeyword = %s\n", keyword);
+	free(keyword);
+	data += i; l -= i;
 
 	data++; l--;
 	printf("\tCompression method = %u (zlib deflate/inflate)\n", *data);
@@ -617,16 +643,18 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 
 static void decode_splt(const uint8_t *data, const uint32_t len)
 {
+	uint32_t l = len, i = 0;
+	char *palette_name = get_name_or_keyword(data, &i);
+	if (!palette_name) {
+		fprintf(stderr, "sPLT: cannot get palette name\n");
+		exit(1);
+	}
+
 	printf("\n");
 
-	uint32_t l = len;
-	printf("\tPalette name   = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	printf("\tPalette name   = %s\n", palette_name);
+	free(palette_name);
+	data += i; l -= i;
 
 	data++; l--;
 	uint8_t sample_depth = *data;
@@ -730,25 +758,27 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 
 static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 {
-	printf("\n");
-	uint32_t l = len;
-
-	printf("\tCalibration name = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
+	uint32_t l = len, i = 0;
+	char *name = get_name_or_keyword(data, &i);
+	if (!name) {
+		fprintf(stderr, "pCAL: cannot get calibration name\n");
+		exit(1);
 	}
-	data++; l--;
-	putchar('\n');
 
+	printf("\n");
+
+	printf("\tCalibration name = %s\n", name);
+	free(name); name = NULL;
+	data += i; l -= i; i = 0;
+
+	data++; l--;
 	uint32_t x0 = 0, x1 = 0;
 	memcpy(&x0, data, sizeof(uint32_t));
 	x0 = __builtin_bswap32(x0);
-	data += 4;
+	data += 4; l-= 4;
 	memcpy(&x1, data, sizeof(uint32_t));
 	x1 = __builtin_bswap32(x1);
-	data += 4;
+	data += 4; l-= 4;
 
 	printf("\tLinear conversion = %d x %d\n", (int32_t)x0, (int32_t)x1);
 
@@ -766,25 +796,26 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	data++; l--;
 	printf("\tParameters = %u\n", params);
 
-	printf("\tUnit name = ");
-	while (*data) {
-		if (isprint(*data))
-			putchar(*data);
-		data++; l--;
+	name = get_name_or_keyword(data, &i);
+	if (!name) {
+		fprintf(stderr, "pCAL: cannot get unit name\n");
+		exit(1);
 	}
-	putchar('\n');
-	data++; l--;
 
+	printf("\tUnit name = %s\n", name);
+	free(name);
+	data += i; l -= i;
+
+	data++; l--;
 	printf("\tValues = ");
 	for (uint8_t i = 0; i < params; i++) {
-		while (*data) {
-			if (isprint(*data))
+		while (l > 0) {
+			if (*data)
 				putchar(*data);
+			else
+				printf(", ");
 			data++; l--;
 		}
-		if (i < params - 1)
-			printf(", ");
-		data++; l--;
 	}
 }
 
@@ -860,7 +891,7 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 			decode_func(data, len); \
 			return; \
 		} \
-	} while (0);
+	} while (0)
 
 static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
 {
