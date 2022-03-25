@@ -177,6 +177,19 @@ static void check_bdepth_coltype(void)
 	}
 }
 
+/*
+ * IHDR
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    4      width (min=1,max=2^31)
+ * 4 - 7    uint32    4      height (min=1,max=2^31)
+ *   8      uint8     1      bit depth (1,2,4,8,16)
+ *   9      uint8     1      color type (0,2,3,4,6)
+ *  10      uint8     1      compression method (0)
+ *  11      uint8     1      filter method (0)
+ *  12      uint8     1      interlace method (0,1)
+ */
 static void decode_ihdr(const uint8_t *data, const uint32_t len)
 {
 	if (len != 13) {
@@ -191,9 +204,17 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	uint32_t w = 0, h = 0;
 	memcpy(&w, data, sizeof(uint32_t));
 	memcpy(&h, data + sizeof(uint32_t), sizeof(uint32_t));
+	w = __builtin_bswap32(w);
+	h = __builtin_bswap32(h);
 
-	printf("\tWidth = %u\n", __builtin_bswap32(w));
-	printf("\tHeight = %u\n", __builtin_bswap32(h));
+	if ((w > INT_MAX - 1) || (h > INT_MAX - 1)) {
+		fprintf(stderr, "IHDR: width/height is too large %u/%u\n", w, h);
+		fprintf(stderr, "maximum value is %d\n", INT_MAX - 1);
+		exit(1);
+	}
+
+	printf("\tWidth = %u\n", w);
+	printf("\tHeight = %u\n", h);
 	printf("\tBit depth = %u per channel\n", bit_depth);
 	printf("\tColor type = ");
 	switch (color_type) {
