@@ -74,6 +74,7 @@ Found 8 chunks from file test.apng
 - pCAL (PNG official extension)
 - gIFx (PNG official extension)
 - gIFg (PNG official extension)
+- sTER (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
 ```

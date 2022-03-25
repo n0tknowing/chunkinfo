@@ -914,6 +914,18 @@ static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 	printf("\tDelay time = %lf seconds", (double).01 * delay_time);
 }
 
+static void decode_ext_ster(const uint8_t *data, const uint32_t len)
+{
+	if (len != 1) {
+		fprintf(stderr, "sTER: invalid chunk length\n");
+		fprintf(stderr, "chunk length is expected 1, but found %u\n", len);
+		exit(1);
+	}
+
+	char *layout = !!data[0] ? "Diverging-fuse layout" : "Cross-fuse layout";
+	printf("\tLayout = %u (%s)", !!data[0], layout);
+}
+
 #define decode_if(what, decode_func) \
 	do {\
 		if (!strcmp(type, what)) { \
@@ -951,6 +963,7 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 	decode_if("pCAL", decode_ext_pcal);
 	decode_if("gIFx", decode_ext_gifx);
 	decode_if("gIFg", decode_ext_gifg);
+	decode_if("sTER", decode_ext_ster);
 
 	/* APNG */
 	decode_if("acTL", decode_apng_actl);
