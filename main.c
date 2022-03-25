@@ -987,6 +987,12 @@ static void read_chunk(FILE *f)
 		}
 		type[4] = 0;
 
+		if (i == 1 && strcmp(type, "IHDR")) {
+			fprintf(stderr, "PNG image must be started with IHDR chunk\n");
+			fprintf(stderr, "but found %s instead\n", type);
+			exit(1);
+		}
+
 		if (!strcmp(type, "IEND"))
 			not_iend = 0;
 
