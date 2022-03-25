@@ -810,7 +810,7 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	printf("\tValues = ");
 	for (uint8_t i = 0; i < params; i++) {
 		while (l > 0) {
-			if (*data)
+			if (isprint(*data))
 				putchar(*data);
 			else
 				printf(", ");
