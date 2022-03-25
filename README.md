@@ -19,25 +19,25 @@ $ chunkinfo test.apng
 	Number of plays  = 0 (infinite)
 
    [fcTL] length 26 at offset 0x00000039 (aa53fc21)
-	Width    = 51
-	Height   = 50
+	Width = 51
+	Height = 50
 	X offset = 0
 	Y offset = 0
-	Delays   = 1000 (denominator 1000)
+	Delays = 1000 (denominator 1000)
 	Disposal = 0 (None)
-	Blend    = 1 (Over)
+	Blend = 1 (Over)
 
    [IDAT] length 1085 at offset 0x0000005f (80ad91a6)
 	......
 
    [fcTL] length 26 at offset 0x000004a8 (6257f46c)
-	Width    = 23
-	Height   = 41
+	Width = 23
+	Height = 41
 	X offset = 9
 	Y offset = 9
-	Delays   = 500 (denominator 1000)
+	Delays = 500 (denominator 1000)
 	Disposal = 0 (None)
-	Blend    = 1 (Over)
+	Blend = 1 (Over)
 
    [fdAT] length 180 at offset 0x000004ce (e64f2ddc)
 	.....
