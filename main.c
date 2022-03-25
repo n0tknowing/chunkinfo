@@ -887,13 +887,31 @@ static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
 {
 	if (len < 11) {
 		fprintf(stderr, "gIFx: invalid chunk length\n");
-		fprintf(stderr, "expected at least 11, but found %u\n", len);
+		fprintf(stderr, "chunk length is expected at least 11, but found %u\n",
+				len);
 		exit(1);
 	}
 
 	printf("\tApplication ID = %.*s\n", 8, (char *)data);
 	printf("\tAuthentication code = %02x%02x%02x\n", data[8], data[9], data[10]);
 	printf("\tApplication data = .....");
+}
+
+static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
+{
+	if (len != 4) {
+		fprintf(stderr, "gIFg: invalid chunk length\n");
+		fprintf(stderr, "chunk length is expected 4, but found %u\n", len);
+		exit(1);
+	}
+
+	uint16_t delay_time = 0;
+	memcpy(&delay_time, data + 2, sizeof(uint16_t));
+	delay_time = __builtin_bswap16(delay_time);
+
+	printf("\tDisposal method = %u\n", data[0]);
+	printf("\tUser input = %u\n", data[1]);
+	printf("\tDelay time = %lf seconds", (double).01 * delay_time);
 }
 
 #define decode_if(what, decode_func) \
@@ -932,6 +950,7 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 	decode_if("sCAL", decode_ext_scal);
 	decode_if("pCAL", decode_ext_pcal);
 	decode_if("gIFx", decode_ext_gifx);
+	decode_if("gIFg", decode_ext_gifg);
 
 	/* APNG */
 	decode_if("acTL", decode_apng_actl);
