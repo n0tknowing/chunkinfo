@@ -315,6 +315,18 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 #endif
 }
 
+/*
+ * tIME
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      year (example: 20,20)
+ *   2      uint8     1      month (min=1,max=12)
+ *   3      uint8     1      day (min=1,max=31)
+ *   4      uint8     1      hour (min=0,max=23)
+ *   5      uint8     1      minute (min=0,max=59)
+ *   6      uint8     1      second (min=0,max=60)
+ */
 static void decode_time(const uint8_t *data, const uint32_t len)
 {
 	if (len != 7) {
