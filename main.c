@@ -841,6 +841,25 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * sPLT (may appear more than one)
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   palette name (printable ascii)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     uint8     1      sample depth (8,16)
+ *  n+2    uint8/16  1/2     red color *
+ *  n+3    uint8/16  1/2     green color *
+ *  n+4    uint8/16  1/2     blue color *
+ *  n+5    uint8/16  1/2     alpha **
+ *  n+6    uint16     2      frequency **
+ *  ...
+ *
+ *  * = if sample depth is 8, then type is uint8 and each length is 1
+ *      otherwise, it's 16, then type is uint16 and each length is 2
+ *  ** = only appear if sample depth is 16
+ */
 static void decode_splt(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len, i = 0;
