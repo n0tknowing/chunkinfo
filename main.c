@@ -622,6 +622,26 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 		printf(".....");
 }
 
+/*
+ * bKGD
+ *
+ * if indexed color
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      palette index
+ *
+ * if grayscale or grayscale+alpha
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      gray level
+ *
+ * if rgb or rgb+alpha
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      red color
+ * 2 - 3    uint16    2      green color
+ * 4 - 5    uint16    2      blue color
+ */
 static void decode_bkgd(const uint8_t *data, const uint32_t len)
 {
 	printf("\t");
