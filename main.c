@@ -1111,6 +1111,21 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	printf("\tNumber of plays = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
 }
 
+/*
+ * fcTL
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    4      sequence of chunk animation, start from 0
+ * 4 - 7    uint32    4      width frame
+ * 8 - 11   uint32    4      height frame
+ * 12 - 15  uint32    4      X position
+ * 16 - 19  uint32    4      Y position
+ * 20 - 21  uint16    2      frame delay fraction numerator
+ * 22 - 23  uint16    2      frame delay fraction denominator
+ *   24     uint8     1      frame disposal type (0,1,2)
+ *   25     uint8     1      frame blend type (0,1)
+ */
 static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 {
 	if (len != 26) {
