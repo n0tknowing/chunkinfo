@@ -476,6 +476,16 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 	printf("\tGreen y = %01.05f", (float)res[7] / 100000);
 }
 
+/*
+ * iCCP
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   profile name (printable ascii)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     uint8     1      compression method (0)
+ *  n+2     uint8     m      compressed ICC profile
+ */
 static void decode_iccp(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len, i = 0;
