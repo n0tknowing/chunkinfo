@@ -404,7 +404,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 		exit(1);
 	}
 
-	const char *srgb_data[5] = {
+	char *srgb_data[5] = {
 		"Perceptual",
 		"Relative colorimetric",
 		"Saturation",
@@ -414,11 +414,12 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 
 	printf("\t");
 
-	int intent = data[0];
-	if (intent >= 0 && intent <= 3)
-		printf("%d intent (%s)", intent, srgb_data[intent]);
-	else
-		printf("%d (Unknown intent)", intent);
+	if (data[0] > 3) {
+		fprintf(stderr, "sRGB: out of range value %u\n", data[0]);
+		exit(1);
+	}
+
+	printf("%d (%s intent)", data[0], srgb_data[data[0]]);
 }
 
 /*
@@ -1338,7 +1339,7 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 
 static void read_chunk(FILE *f)
 {
-	int not_iend = 1, i = 1;
+	int not_iend = 1, i = 0;
 	while (not_iend) {
 		errno = 0;
 		// read chunk size
@@ -1363,7 +1364,7 @@ static void read_chunk(FILE *f)
 		}
 		type[4] = 0;
 
-		if (i == 1 && strcmp(type, "IHDR")) {
+		if (i == 0 && strcmp(type, "IHDR")) {
 			fprintf(stderr, "PNG image must be started with IHDR chunk\n");
 			fprintf(stderr, "but found %s instead\n", type);
 			exit(1);
