@@ -971,6 +971,16 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	printf("\tImage position = %d x %d %s", (int32_t)x, (int32_t)y, unit);
 }
 
+/*
+ * sCAL
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      unit (1=meter,2=radian)
+ *   1      char    1 - n    pixel width (ascii floating-point)
+ *  n+1     uint8     1      null separator (\0)
+ *  n+2     char    1 - m    pixel height (ascii floating-point)
+ */
 static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len;
