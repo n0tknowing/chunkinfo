@@ -1146,6 +1146,15 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	printf("\tBlend = %u (%s)", buf3[1], blend);
 }
 
+/*
+ * gIFx
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 7    uint8     8      application identifier (printable ascii)
+ * 8 - 10   uint8     3      authentication code
+ *   11     ?????     n      application data
+ */
 static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
 {
 	if (len < 11) {
