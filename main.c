@@ -466,14 +466,33 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 		offset += sizeof(uint32_t);
 	}
 
-	printf("\tWhite point x = %01.05f\n", (float)res[0] / 100000);
-	printf("\tWhite point y = %01.05f\n", (float)res[1] / 100000);
-	printf("\tRed x = %01.05f\n", (float)res[2] / 100000);
-	printf("\tRed y = %01.05f\n", (float)res[3] / 100000);
-	printf("\tBlue x = %01.05f\n", (float)res[4] / 100000);
-	printf("\tBlue y = %01.05f\n", (float)res[5] / 100000);
-	printf("\tGreen x = %01.05f\n", (float)res[6] / 100000);
-	printf("\tGreen y = %01.05f", (float)res[7] / 100000);
+	uint32_t wx = res[0], wy = res[1],
+		 rx = res[2], ry = res[3],
+		 gx = res[4], gy = res[5],
+		 bx = res[6], by = res[7];
+
+	if (wx > 80000 || wy > 80000 || (wx + wy) > 100000) {
+		fprintf(stderr, "cHRM: invalid white point\n");
+		exit(1);
+	} else if (rx > 80000 || ry > 80000 || (rx + ry) > 100000) {
+		fprintf(stderr, "invalid red point\n");
+		exit(1);
+	} else if (gx > 80000 || gx > 80000 || (gx + gy) > 100000) {
+		fprintf(stderr, "invalid green point\n");
+		exit(1);
+	} else if (bx > 80000 || by > 80000 || (bx + by) > 100000) {
+		fprintf(stderr, "invalid blue point\n");
+		exit(1);
+	}
+
+	printf("\tWhite point x = %01.05f\n", (float)wx / 100000);
+	printf("\tWhite point y = %01.05f\n", (float)wy / 100000);
+	printf("\tRed x = %01.05f\n", (float)rx / 100000);
+	printf("\tRed y = %01.05f\n", (float)ry / 100000);
+	printf("\tBlue x = %01.05f\n", (float)gx / 100000);
+	printf("\tBlue y = %01.05f\n", (float)gy / 100000);
+	printf("\tGreen x = %01.05f\n", (float)bx / 100000);
+	printf("\tGreen y = %01.05f", (float)by / 100000);
 }
 
 /*
