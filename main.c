@@ -508,6 +508,15 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 		printf(".....");
 }
 
+/*
+ * tEXt (may appear more than one)
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   keyword (printable ascii)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     char      m      text (printable ascii)
+ */
 static void decode_text(const uint8_t *data, const uint32_t len)
 {
 
