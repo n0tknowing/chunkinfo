@@ -1006,6 +1006,23 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 	printf(" (%s)", unit);
 }
 
+/*
+ * pCAL
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   calibration name (printable ascii)
+ *  n+1     uint8     1      null separator (\0)
+ *  n+2     int32     4      original zero (x0)
+ *  n+6     int32     4      original max (x1)
+ *  n+9     uint8     1      equation type (0,1,2,3)
+ *  n+10    uint8     1      number of parameters
+ *  n+11    char    0 - m    unit name (printable ascii)
+ *  m+1     uint8     1      null separator (\0)
+ *  m+2     char    1 - p    parameter 0 (p0) (floating-point ascii)
+ *  p+1     uint8     1      null separator (\0)
+ *  p+2     char    1 - o    parameter 1 (p1) (floating-point ascii)
+ */
 static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len, i = 0;
