@@ -943,6 +943,15 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * oFFs
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    int32     4      x position
+ * 4 - 7    int32     4      y position
+ *   8      uint8     2      unit (0=pixel,1=micrometer)
+ */
 static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 {
 	if (len != 9) {
