@@ -1084,6 +1084,14 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * acTL
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 3    uint32    4      number of frames
+ * 4 - 7    uint32    4      number of looping (0=infinite looping)
+ */
 static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 {
 	if (len != 8) {
