@@ -346,11 +346,11 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 	memcpy(&year, data, sizeof(uint16_t));
 
 	struct tm t = {
-		.tm_sec = data[6],
-		.tm_min = data[5],
-		.tm_hour = data[4],
-		.tm_mday = data[3],
-		.tm_mon = data[2],
+		.tm_sec = data[6] <= 60 ? data[6] : 0,
+		.tm_min = data[5] <= 59 ? data[5] : 0,
+		.tm_hour = data[4] <= 23 ? data[4] : 0,
+		.tm_mday = data[3] >= 1 && data[3] <= 31 ? data[3] : 1,
+		.tm_mon = data[2] >= 1 && data[2] <= 12 ? data[2] : 1,
 		.tm_year = __builtin_bswap16(year) - 1900
 	};
 
