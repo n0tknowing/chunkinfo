@@ -540,6 +540,21 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * iTXt (may appear more than one)
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   keyword (printable ascii)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     uint8     1      compression flag (0=uncompress,1=compress)
+ *  n+2     uint8     1      compression method
+ *  n+3     char    0 - m    language tag (printable ascii)
+ *  m+1     uint8     1      null separator (\0)
+ *  m+2     utf8    0 - o    translated keyword (utf8)
+ *  o+1     uint8     1      null separator (\0)
+ *  o+2     utf8    0 - p    text (utf8 or compressed utf8)
+ */
 static void decode_itxt(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len, i = 0;
