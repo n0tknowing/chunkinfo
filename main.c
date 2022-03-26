@@ -1195,6 +1195,13 @@ static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 	printf("\tDelay time = %lf seconds", (double).01 * delay_time);
 }
 
+/*
+ * sTER
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      layout mode (0=cross-fuse,1=diverging-fuse)
+ */
 static void decode_ext_ster(const uint8_t *data, const uint32_t len)
 {
 	if (len != 1) {
