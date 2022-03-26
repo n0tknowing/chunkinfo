@@ -852,6 +852,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 static void decode_trns(const uint8_t *data, const uint32_t len)
 {
 	printf("\t");
+	uint32_t max = bit_depth_max - 1;
 
 	switch (color_type) {
 	case GRAY: {
@@ -864,6 +865,11 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		uint16_t val = 0;
 		memcpy(&val, data, sizeof(uint16_t));
 		val = __builtin_bswap16(val);
+		if (val > max) {
+			fprintf(stderr, "tRNS: value too large for grayscale\n");
+			exit(1);
+		}
+
 		printf("gray(%u)", val);
 		break;
 	}
@@ -874,14 +880,24 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		if (bit_depth < 16) {
-			printf("red(%02x), green(%02x), blue(%02x)",
-					data[1], data[3], data[5]);
-		} else {
-			printf("red(%02x%02x), ", data[0], data[1]);
-			printf("green(%02x%02x), ", data[2], data[3]);
-			printf("blue(%02x%02x)", data[4], data[5]);
+		uint16_t r, g, b;
+		memcpy(&r, data, sizeof(uint16_t));
+		memcpy(&g, data + 2, sizeof(uint16_t));
+		memcpy(&b, data + 4, sizeof(uint16_t));
+		r = __builtin_bswap16(r);
+		g = __builtin_bswap16(g);
+		b = __builtin_bswap16(b);
+
+		if (r > max || g > max || b > max) {
+			fprintf(stderr, "tRNS: value too large for rgb\n");
+			exit(1);
 		}
+
+		if (bit_depth < 16)
+			printf("red(%02x), green(%02x), blue(%02x)", r, g, b);
+		else
+			printf("red(%04x), green(%04x), blue(%04x)", r, g, b);
+
 		break;
 	case INDEXED:
 		for (uint32_t i = 0, nl = 1; i < len; i++, nl++) {
@@ -891,7 +907,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		}
 		break;
 	default:
-		fprintf(stderr, "tRNS: only grayscale, rgb, and indexed-color are allowed");
+		fprintf(stderr, "tRNS: invalid color type");
 		exit(1);
 		break;
 	}
