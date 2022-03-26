@@ -770,6 +770,29 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * tRNS
+ *
+ * if grayscale
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      transparency level for gray
+ *
+ * if indexed
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      transparency level for palette index 0
+ *   1      uint8     1      transparency level for palette index 1
+ *  ...
+ *   n      uint8     1      transparency level for palette index n
+ *
+ * if rgb
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      transparency level for red
+ * 2 - 3    uint16    2      transparency level for green
+ * 4 - 5    uint16    2      transparency level for blue
+ */
 static void decode_trns(const uint8_t *data, const uint32_t len)
 {
 	printf("\t");
