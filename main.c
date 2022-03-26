@@ -1169,6 +1169,15 @@ static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
 	printf("\tApplication data = .....");
 }
 
+/*
+ * gIFg
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      disposal method
+ *   1      uint8     1      user input flag
+ * 2 - 3    uint16    2      delay time
+ */
 static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 {
 	if (len != 4) {
