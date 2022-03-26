@@ -13,6 +13,8 @@
 #include <string.h>
 #include <time.h>
 
+#define MAX_CHUNK 256
+
 static uint8_t plt[256][3];
 static uint8_t bit_depth, color_type;
 static uint32_t plt_entry, bit_depth_max;
@@ -1347,6 +1349,9 @@ static void read_chunk(FILE *f)
 {
 	int not_iend = 1, i = 0;
 	while (not_iend) {
+		if (i == MAX_CHUNK)
+			break;
+
 		errno = 0;
 		// read chunk size
 		uint32_t size = fread_u32(f);
