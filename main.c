@@ -16,7 +16,7 @@
 
 static uint8_t plt[256][3];
 static uint8_t bit_depth, color_type;
-static uint32_t plt_entry;
+static uint32_t plt_entry, bit_depth_max;
 
 enum COLOR_TYPE {
 	GRAY = 0,
@@ -201,6 +201,8 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	bit_depth = data[8], color_type = data[9];
 	check_bdepth_coltype();
 
+	bit_depth_max = 1 << bit_depth;
+
 	uint32_t w = 0, h = 0;
 	memcpy(&w, data, sizeof(uint32_t));
 	memcpy(&h, data + sizeof(uint32_t), sizeof(uint32_t));
@@ -274,6 +276,11 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	}
 
 	plt_entry = len / 3;
+	if (plt_entry > bit_depth_max) {
+		fprintf(stderr, "PLTE: palette entries is too big\n");
+		exit(1);
+	}
+
 	printf("\tEntries = %u\n", plt_entry);
 
 	// fill color
@@ -664,6 +671,7 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 static void decode_bkgd(const uint8_t *data, const uint32_t len)
 {
 	printf("\t");
+	uint32_t max = bit_depth_max - 1;
 
 	switch (color_type) {
 	case GRAY: case GRAY_ALPHA:
@@ -673,13 +681,16 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
-		if (bit_depth < 16) {
-			printf("Gray level = %u", data[1]);
-		} else {
-			uint16_t val = 0;
-			memcpy(&val, data, sizeof(uint16_t));
-			printf("Gray level = %u", __builtin_bswap16(val));
+		uint16_t val = 0;
+		memcpy(&val, data, sizeof(uint16_t));
+		val = __builtin_bswap16(val);
+		if (val > max) {
+			fprintf(stderr, "bKGD: value too large for gray/gray+alpha\n");
+			exit(1);
 		}
+
+		printf("Gray level = %u", val);
+
 		break;
 	case RGB: case RGB_ALPHA:
 		if (len != 6) {
@@ -688,14 +699,26 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 			exit(1);
 		}
 
+		uint16_t r, g, b;
+		memcpy(&r, data, sizeof(uint16_t));
+		memcpy(&g, data + 2, sizeof(uint16_t));
+		memcpy(&b, data + 4, sizeof(uint16_t));
+		r = __builtin_bswap16(r);
+		g = __builtin_bswap16(g);
+		b = __builtin_bswap16(b);
+
+		if (r > max || g > max || b > max) {
+			fprintf(stderr, "bKGD: value too large for rgb and rgb+alpha\n");
+			exit(1);
+		}
+
 		printf("Color = ");
 		if (bit_depth < 16) {
-			printf("#%02x%02x%02x", data[1], data[3], data[5]);
+			printf("#%02x%02x%02x", r, g, b);
 		} else {
-			printf("#%02x%02x", data[0], data[1]);
-			printf("%02x%02x", data[2], data[3]);
-			printf("%02x%02x", data[4], data[5]);
+			printf("#%04x%04x%04x", r, g, b);
 		}
+
 		break;
 	case INDEXED: {
 		if (len != 1) {
