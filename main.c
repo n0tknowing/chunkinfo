@@ -590,6 +590,16 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	printf("\tText (UTF-8) = ...");
 }
 
+/*
+ * zTXt (may appear more than one)
+ *
+ * offset   type    length   value
+ * -------------------------------
+ *   0      char    1 - 79   keyword (printable ascii)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     uint8     1      compression method
+ *  n+2     uint8     m      compressed text (ascii)
+ */
 static void decode_ztxt(const uint8_t *data, const uint32_t len)
 {
 	uint32_t l = len, i = 0;
