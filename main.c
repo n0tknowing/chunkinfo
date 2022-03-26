@@ -907,6 +907,18 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	}
 }
 
+/*
+ * hIST
+ *
+ * entry = chunk length / 2
+ *
+ * offset   type    length   value
+ * -------------------------------
+ * 0 - 1    uint16    2      frequency of used for palette index 0
+ * 2 - 3    uint16    2      frequency of used for palette index 1
+ * 4 - 5    uint16    2      frequency of used for palette index 2
+ * ...
+ */
 static void decode_hist(const uint8_t *data, const uint32_t len)
 {
 	if (len % 2 != 0) {
