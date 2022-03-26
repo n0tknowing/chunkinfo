@@ -5,7 +5,6 @@
  * for details, see https://github.com/n0tknowing/chunkinfo
  */
 
-#include <ctype.h>
 #include <errno.h>
 #include <limits.h>
 #include <stdint.h>
@@ -101,21 +100,28 @@ static uint32_t fread_u32(FILE *f)
 	return __builtin_bswap32(ret);
 }
 
+#define valid_keyword(c) ((c >= 0x20 && c <= 0x7e))
+
 static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 {
-	size_t i = 0;
-	char *ret = calloc(80, 1);
-	if (!ret)
-		return NULL;
+	if (data && len) {
+		size_t i = 0;
+		char *ret = calloc(80, 1);
+		if (!ret)
+			return NULL;
 
-	while (*data) {
-		if (isprint(*data))
-			ret[i] = *data;
-		data++; i++;
+		for (; i < 79; i++) {
+			if (data[i] && valid_keyword(data[i]))
+				ret[i] = data[i];
+			else
+				break;
+		}
+
+		*len = i;
+		return ret;
 	}
-	*len = i;
 
-	return ret;
+	return NULL;
 }
 
 static int png_ok(FILE *f)
@@ -566,7 +572,7 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	data++; l--;
 	printf("\tText = ");
 	while (l > 0) {
-		if (isprint(*data))
+		if (valid_keyword(*data))
 			putchar(*data);
 		data++; l--;
 	}
@@ -611,7 +617,7 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	data++; l--;
 	printf("\tLanguage tag = ");
 	while (*data) {
-		if (isprint(*data))
+		if (valid_keyword(*data))
 			putchar(*data);
 		data++; l--;
 	}
@@ -1044,7 +1050,7 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 	printf("\tPhysical scale = ");
 
 	while (*data) {
-		if (isprint(*data))
+		if (valid_keyword(*data))
 			putchar(*data);
 		data++; l--;
 	}
@@ -1052,7 +1058,7 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 	printf(" x ");
 
 	while (l > 0) {
-		if (isprint(*data))
+		if (valid_keyword(*data))
 			putchar(*data);
 		data++; l--;
 	}
@@ -1128,7 +1134,7 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	printf("\tValues = ");
 	for (uint8_t i = 0; i < params; i++) {
 		while (l > 0) {
-			if (isprint(*data))
+			if (valid_keyword(*data))
 				putchar(*data);
 			else
 				printf(", ");
