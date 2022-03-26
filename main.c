@@ -426,7 +426,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    1      gamma value
+ * 0 - 3    uint32    4      gamma value
  */
 static void decode_gama(const uint8_t *data, const uint32_t len)
 {
@@ -438,8 +438,13 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 
 	uint32_t gama = 0;
 	memcpy(&gama, data, sizeof(uint32_t));
+	gama = __builtin_bswap32(gama);
+	if (gama == 0) {
+		fprintf(stderr, "gAMA: invalid gamma value %u\n", gama);
+		exit(1);
+	}
 
-	printf("\tGamma = %01.05f", (float)__builtin_bswap32(gama) / 100000);
+	printf("\tGamma = %01.05f", (float)gama / 100000);
 }
 
 /*
