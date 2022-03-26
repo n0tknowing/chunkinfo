@@ -936,10 +936,15 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	const uint32_t entry = len / 2;
 	printf("\tEntries = %u\n", entry);
 
+	uint16_t h = 0;
+	int off = 0;
 	for (uint32_t i = 0, nl = 1; i < entry; i++, nl++) {
-		printf("\t[%03u] %u  ", i, data[i]);
+		memcpy(&h, data + off, sizeof(uint16_t));
+		h = __builtin_bswap16(h);
+		printf("\t[%03u] %u  ", i, h);
 		if ((nl % 6) == 0)
 			printf("\n");
+		off += sizeof(uint16_t);
 	}
 }
 
