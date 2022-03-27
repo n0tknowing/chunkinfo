@@ -208,8 +208,8 @@ static void check_bit_depth_and_color_type(void)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      width (min=1,max=2^31)
- * 4 - 7    uint32    4      height (min=1,max=2^31)
+ *   0      uint32    4      width (min=1,max=2^31)
+ *   4      uint32    4      height (min=1,max=2^31)
  *   8      uint8     1      bit depth (1,2,4,8,16)
  *   9      uint8     1      color type (0,2,3,4,6)
  *  10      uint8     1      compression method (0)
@@ -267,9 +267,10 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
  *   0      uint8     1      red color
  *   1      uint8     1      green color
  *   2      uint8     1      blue color
+ *   3      uint8     1      red color
+ *   4      uint8     1      green color
+ *   5      uint8     1      blue color
  *  ...
- * n - 2    uint8     1      red color
- * n - 1    uint8     1      green color
  *   n      uint8     1      blue color
  */
 static void decode_plte(const uint8_t *data, const uint32_t len)
@@ -322,7 +323,7 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      year (example: 20,20)
+ *   0      uint16    2      year (example: 20,20)
  *   2      uint8     1      month (min=1,max=12)
  *   3      uint8     1      day (min=1,max=31)
  *   4      uint8     1      hour (min=0,max=23)
@@ -356,8 +357,8 @@ static void decode_time(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      x axis
- * 4 - 7    uint32    4      y axis
+ *   0      uint32    4      x axis
+ *   4      uint32    4      y axis
  *   8      uint8     1      unit (0=pixel,1=meter)
  */
 static void decode_phys(const uint8_t *data, const uint32_t len)
@@ -409,7 +410,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      gamma value
+ *   0      uint32    4      gamma value
  */
 static void decode_gama(const uint8_t *data, const uint32_t len)
 {
@@ -430,14 +431,14 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      white point x
- * 4 - 7    uint32    4      white point y
- * 8 - 11   uint32    4      red x
- * 12 - 15  uint32    4      red y
- * 16 - 19  uint32    4      green x
- * 20 - 23  uint32    4      green y
- * 24 - 27  uint32    4      blue x
- * 28 - 31  uint32    4      blue y
+ *   0      uint32    4      white point x
+ *   4      uint32    4      white point y
+ *   8      uint32    4      red x
+ *   12     uint32    4      red y
+ *   16     uint32    4      green x
+ *   20     uint32    4      green y
+ *   24     uint32    4      blue x
+ *   28     uint32    4      blue y
  */
 static void decode_chrm(const uint8_t *data, const uint32_t len)
 {
@@ -547,10 +548,10 @@ static void decode_text(const uint8_t *data, const uint32_t len)
  *  n+1     uint8     1      compression flag (0=uncompress,1=compress)
  *  n+2     uint8     1      compression method
  *  n+3     char    0 - m    language tag (printable ascii)
- *  m+1     uint8     1      null separator (\0)
- *  m+2     utf8    0 - o    translated keyword (utf8)
- *  o+1     uint8     1      null separator (\0)
- *  o+2     utf8    0 - p    text (utf8 or compressed utf8)
+ *   m      uint8     1      null separator (\0)
+ *  m+1     utf8    0 - o    translated keyword (utf8)
+ *   o      uint8     1      null separator (\0)
+ *  o+1     utf8    0 - p    text (utf8 or compressed utf8)
  */
 static void decode_itxt(const uint8_t *data, const uint32_t len)
 {
@@ -624,14 +625,14 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
  * if grayscale or grayscale+alpha
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      gray level
+ *   0      uint16    2      gray level
  *
  * if rgb or rgb+alpha
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      red color
- * 2 - 3    uint16    2      green color
- * 4 - 5    uint16    2      blue color
+ *   0      uint16    2      red color
+ *   2      uint16    2      green color
+ *   4      uint16    2      blue color
  */
 static void decode_bkgd(const uint8_t *data, const uint32_t len)
 {
@@ -708,17 +709,28 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	if (len < 1 && len > 4)
 		die("sBIT: invalid chunk length");
 
+	uint32_t max = color_type == INDEXED ? 8 : bit_depth;
+
 	switch (color_type) {
 	case GRAY:
+		if (data[0] > max)
+			die("sBIT: value out of range");
 		out("gray(%u)", data[0]);
 		break;
 	case GRAY_ALPHA:
+		if (data[0] > max || data[1] > max)
+			die("sBIT: value out of range");
 		out("gray(%u), alpha(%u)", data[0], data[1]);
 		break;
 	case INDEXED: case RGB:
+		if (data[0] > max || data[1] > max || data[2] > max)
+			die("sBIT: value out of range");
 		out("red(%u), green(%u), blue(%u)", data[0], data[1], data[2]);
 		break;
 	case RGB_ALPHA:
+		if (data[0] > max || data[1] > max || data[2] > max
+				  || data[3] > max)
+			die("sBIT: value out of range");
 		out("red(%u) green(%u) blue(%u) alpha(%u)",
 				data[0], data[1], data[2], data[3]);
 		break;
@@ -734,7 +746,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
  * if grayscale
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      transparency level for gray
+ *   0      uint16    2      transparency level for gray
  *
  * if indexed
  * offset   type    length   value
@@ -747,9 +759,9 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
  * if rgb
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      transparency level for red
- * 2 - 3    uint16    2      transparency level for green
- * 4 - 5    uint16    2      transparency level for blue
+ *   0      uint16    2      transparency level for red
+ *   2      uint16    2      transparency level for green
+ *   4      uint16    2      transparency level for blue
  */
 static void decode_trns(const uint8_t *data, const uint32_t len)
 {
@@ -810,7 +822,6 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
  *  n+4    uint8/16  1/2     blue color *
  *  n+5    uint8/16  1/2     alpha **
  *  n+6    uint16     2      frequency **
- *  ...
  *
  *  * = if sample depth is 8, then type is uint8 and each length is 1
  *      otherwise, it's 16, then type is uint16 and each length is 2
@@ -866,10 +877,11 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 1    uint16    2      frequency of used for palette index 0
- * 2 - 3    uint16    2      frequency of used for palette index 1
- * 4 - 5    uint16    2      frequency of used for palette index 2
- * ...
+ *   0      uint16    2      frequency of used for palette index 0
+ *   2      uint16    2      frequency of used for palette index 1
+ *   4      uint16    2      frequency of used for palette index 2
+ *  ...
+ *   n      uint16    2      frequency of used for palette index n
  */
 static void decode_hist(const uint8_t *data, const uint32_t len)
 {
@@ -900,9 +912,9 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    int32     4      x position
- * 4 - 7    int32     4      y position
- *   8      uint8     2      unit (0=pixel,1=micrometer)
+ *   0      int32     4      x position
+ *   4      int32     4      y position
+ *   8      uint8     1      unit (0=pixel,1=micrometer)
  */
 static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 {
@@ -927,8 +939,8 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
  * -------------------------------
  *   0      uint8     1      unit (1=meter,2=radian)
  *   1      char    1 - n    pixel width (ascii floating-point)
- *  n+1     uint8     1      null separator (\0)
- *  n+2     char    1 - m    pixel height (ascii floating-point)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     char    1 - m    pixel height (ascii floating-point)
  */
 static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 {
@@ -961,16 +973,16 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
  * offset   type    length   value
  * -------------------------------
  *   0      char    1 - 79   calibration name (printable ascii)
- *  n+1     uint8     1      null separator (\0)
- *  n+2     int32     4      original zero (x0)
- *  n+6     int32     4      original max (x1)
+ *   n      uint8     1      null separator (\0)
+ *  n+1     int32     4      original zero (x0)
+ *  n+5     int32     4      original max (x1)
  *  n+9     uint8     1      equation type (0,1,2,3)
  *  n+10    uint8     1      number of parameters
  *  n+11    char    0 - m    unit name (printable ascii)
- *  m+1     uint8     1      null separator (\0)
- *  m+2     char    1 - p    parameter 0 (p0) (floating-point ascii)
- *  p+1     uint8     1      null separator (\0)
- *  p+2     char    1 - o    parameter 1 (p1) (floating-point ascii)
+ *   m      uint8     1      null separator (\0)
+ *  m+1     char    1 - p    parameter 0 (p0) (floating-point ascii)
+ *   p      uint8     1      null separator (\0)
+ *  p+1     char    1 - o    parameter 1 (p1) (floating-point ascii)
  */
 static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 {
@@ -1038,7 +1050,7 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
  * -------------------------------
  *   0      uint8     1      disposal method
  *   1      uint8     1      user input flag
- * 2 - 3    uint16    2      delay time
+ *   2      uint16    2      delay time
  */
 static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 {
@@ -1076,8 +1088,8 @@ static void decode_ext_ster(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 7    uint8     8      application identifier (printable ascii)
- * 8 - 10   uint8     3      authentication code
+ *   0      uint8     8      application identifier (printable ascii)
+ *   8      uint8     3      authentication code
  *   11     ?????     n      application data
  */
 static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
@@ -1095,8 +1107,8 @@ static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      number of frames
- * 4 - 7    uint32    4      number of looping (0=infinite looping)
+ *   0      uint32    4      number of frames
+ *   4      uint32    4      number of looping (0=infinite looping)
  */
 static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 {
@@ -1119,13 +1131,13 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
  *
  * offset   type    length   value
  * -------------------------------
- * 0 - 3    uint32    4      sequence of chunk animation, start from 0
- * 4 - 7    uint32    4      width frame
- * 8 - 11   uint32    4      height frame
- * 12 - 15  uint32    4      X position
- * 16 - 19  uint32    4      Y position
- * 20 - 21  uint16    2      frame delay fraction numerator
- * 22 - 23  uint16    2      frame delay fraction denominator
+ *   0      uint32    4      sequence of chunk animation, start from 0
+ *   4      uint32    4      width frame
+ *   8      uint32    4      height frame
+ *   12     uint32    4      X position
+ *   16     uint32    4      Y position
+ *   20     uint16    2      frame delay fraction numerator
+ *   23     uint16    2      frame delay fraction denominator
  *   24     uint8     1      frame disposal type (0,1,2)
  *   25     uint8     1      frame blend type (0,1)
  */
