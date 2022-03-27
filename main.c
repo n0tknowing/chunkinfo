@@ -31,7 +31,7 @@ enum COLOR_TYPE {
 static const char *cstr[] = {
 	[GRAY] = "Grayscale",
 	/* empty */
-	[RGB] = "TRGB",
+	[RGB] = "RGB",
 	[INDEXED] = "Indexed-color",
 	[GRAY_ALPHA] = "Grayscale with Alpha channel",
 	/* empty */
@@ -1284,7 +1284,7 @@ static void read_chunk(FILE *f)
 		} else {
 			if (data)
 				free(data);
-			die("\t%s: corrupted crc", type);
+			die("%s: corrupted crc", type);
 		}
 
 		i++;
