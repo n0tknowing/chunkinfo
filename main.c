@@ -234,7 +234,8 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	uint8_t chan_bytes = chan[color_type] * bit_depth;
 	uint8_t c = !!data[10], f = !!data[11], i = !!data[12];
 	if (c || f)
-		die("IHDR: invalid value for %s method", c ? "Compression" : "Filter");
+		die("IHDR: invalid value for %s method", c ? "Compression"
+							   : "Filter");
 
 	uint32_t w = 0, h = 0;
 	memcpy(&w, data, 4);
@@ -284,8 +285,8 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 
 	for (uint32_t i = 0, col = 0; i < plt_entry; i++, col += 3) {
 		plt[i][0] = data[col];
-		plt[i][1] = data[col+1];
-		plt[i][2] = data[col+2];
+		plt[i][1] = data[col + 1];
+		plt[i][2] = data[col + 2];
 	}
 
 	for (uint32_t i = 0, nl = 1; i < plt_entry; i++, nl++) {
@@ -831,10 +832,9 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	out("Sample depth = %u", sample_depth);
 
 	data++; l--;
-	printf("\tEntry = ");
 	if (sample_depth == 8 && (l % 6) == 0) {
 		uint32_t entry = l / 6;
-		printf("%u\n", entry);
+		out("Entries = %u", entry);
 		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 3, nl++) {
 			printf("\t[%03u]", i);
 			printf(" #%02x%02x%02x ", data[col], data[col+1], data[col+2]);
@@ -843,7 +843,7 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 		}
 	} else if (sample_depth == 16 && (l % 10) == 0) {
 		uint32_t entry = l / 10;
-		printf("%u\n", entry);
+		out("Entries = %u", entry);
 		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 10, nl++) {
 			printf("\t[%03u]", i);
 			printf(" #%02x%02x", data[col], data[col+1]); // red
