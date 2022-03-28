@@ -16,10 +16,6 @@
 
 #define MAX_CHUNK 256
 
-static uint8_t plt[256][3];
-static uint8_t bit_depth, color_type;
-static uint32_t plt_entry, bit_depth_max;
-
 enum COLOR_TYPE {
 	GRAY = 0,
 	RGB = 2,
@@ -28,6 +24,9 @@ enum COLOR_TYPE {
 	RGB_ALPHA = 6
 };
 
+static uint8_t plt[256][3];
+static uint8_t bit_depth, color_type;
+static uint32_t plt_entry, bit_depth_max;
 static const char *cstr[] = {
 	[GRAY] = "Grayscale",
 	/* empty */
@@ -38,7 +37,6 @@ static const char *cstr[] = {
 	[RGB_ALPHA] = "RGB with Alpha channel"
 };
 
-// crc from https://github.com/skeeto/scratch/blob/master/pngattach/pngattach.c
 static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 {
 	static const uint32_t crc32_table[] = {
@@ -140,17 +138,17 @@ static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 static void die(const char *msg, ...)
 {
 	va_list ap;
+	int save = errno;
 
 	va_start(ap, msg);
 	vfprintf(stderr, msg, ap);
-	if (errno) {
-		fputc(' ', stderr);
-		perror(NULL);
-	} else {
+	if (save)
+		fprintf(stderr, " (%s)\n", strerror(save));
+	else
 		fputc('\n', stderr);
-	}
 	va_end(ap);
 
+	errno = save;
 	exit(1);
 }
 
@@ -168,11 +166,12 @@ static void out(const char *msg, ...)
 static int png_ok(FILE *f)
 {
 	uint8_t buf[8];
+
 	if (fread(buf, 1, 8, f) != 8)
 		return 0;
-
 	if (!memcmp(buf, "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", 8))
 		return 1;
+
 	return 0;
 }
 
@@ -191,7 +190,7 @@ static void check_bit_depth_and_color_type(void)
 		break;
 	case RGB: case RGB_ALPHA: case GRAY_ALPHA:
 		if (!valid_bdepth_rgb(bit_depth))
-			die("IHDR: invalid bit depth for rgb");
+			die("IHDR: invalid bit depth for %s", cstr[color_type]);
 		break;
 	case INDEXED:
 		if (!valid_bdepth_indexed(bit_depth))
@@ -203,7 +202,7 @@ static void check_bit_depth_and_color_type(void)
 	}
 }
 
-/*
+/**
  * IHDR
  *
  * offset   type    length   value
@@ -256,7 +255,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 	out("Interlace = %u (%s interlace)", i, i ? "Adam7" : "no");
 }
 
-/*
+/**
  * PLTE
  *
  * n = chunk length
@@ -285,9 +284,9 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	out("Entries = %u", plt_entry);
 
 	for (uint32_t i = 0, col = 0; i < plt_entry; i++, col += 3) {
-		plt[i][0] = data[col];
-		plt[i][1] = data[col + 1];
-		plt[i][2] = data[col + 2];
+		plt[i][0] = data[col];      /* red */
+		plt[i][1] = data[col + 1];  /* green */
+		plt[i][2] = data[col + 2];  /* blue */
 	}
 
 	for (uint32_t i = 0, nl = 1; i < plt_entry; i++, nl++) {
@@ -311,14 +310,16 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 	}
 
 	fclose(f);
+
 	out("See idat.z");
 #else
 	(void)data; (void)len;
+
 	out("Image data");
 #endif
 }
 
-/*
+/**
  * tIME
  *
  * offset   type    length   value
@@ -337,14 +338,15 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 
 	uint16_t year = 0;
 	memcpy(&year, data, 2);
+	year = __builtin_bswap16(year) - 1900;
 
 	struct tm t = {
 		.tm_sec = data[6] <= 60 ? data[6] : 0,
 		.tm_min = data[5] <= 59 ? data[5] : 0,
 		.tm_hour = data[4] <= 23 ? data[4] : 0,
-		.tm_mday = data[3] >= 1 && data[3] <= 31 ? data[3] : 1,
-		.tm_mon = data[2] >= 1 && data[2] <= 12 ? data[2] : 1,
-		.tm_year = __builtin_bswap16(year) - 1900
+		.tm_mday = (data[3] >= 1 && data[3] <= 31) ? data[3] : 1,
+		.tm_mon = (data[2] >= 1 && data[2] <= 12) ? data[2] : 1,
+		.tm_year = year
 	};
 
 	char buf[100] = {0};
@@ -352,7 +354,7 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 		out("Last modification = %s", buf);
 }
 
-/*
+/**
  * pHYs
  *
  * offset   type    length   value
@@ -367,7 +369,6 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 		die("pHYs: invalid chunk length");
 
 	uint32_t x = 0, y = 0;
-
 	memcpy(&x, data, 4);
 	memcpy(&y, data + 4, 4);
 	x = __builtin_bswap32(x);
@@ -379,7 +380,7 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	out("%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
 }
 
-/*
+/**
  * sRGB
  *
  * offset   type    length   value
@@ -405,7 +406,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 	out("%s intent", srgb_data[data[0]]);
 }
 
-/*
+/**
  * gAMA
  *
  * offset   type    length   value
@@ -426,7 +427,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 	out("Gamma = %01.05f", (float)gama / 100000);
 }
 
-/*
+/**
  * cHRM
  *
  * offset   type    length   value
@@ -478,7 +479,7 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 	out("Green y = %01.05f", (float)by / 100000);
 }
 
-/*
+/**
  * iCCP
  *
  * offset   type    length   value
@@ -506,7 +507,7 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 	out("Profile (compressed) = ......");
 }
 
-/*
+/**
  * tEXt (may appear more than one)
  *
  * offset   type    length   value
@@ -538,7 +539,7 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	putchar('\n');
 }
 
-/*
+/**
  * iTXt (may appear more than one)
  *
  * offset   type    length   value
@@ -586,7 +587,7 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	out("Text (UTF-8) = .....");
 }
 
-/*
+/**
  * zTXt (may appear more than one)
  *
  * offset   type    length   value
@@ -614,7 +615,7 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 	out("Text (compressed) = .....");
 }
 
-/*
+/**
  * bKGD
  *
  * if indexed color
@@ -672,6 +673,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		idx = data[0];
 		if (idx > plt_entry)
 			die("bKGD: palette index out of range");
+
 		out("[%03u] #%02x%02x%02x", idx,
 				plt[idx][0], plt[idx][1], plt[idx][2]);
 		break;
@@ -681,7 +683,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 	}
 }
 
-/*
+/**
  * sBIT
  *
  * if grayscale
@@ -711,26 +713,31 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 
 	uint32_t max = color_type == INDEXED ? 8 : bit_depth;
 
+	/* FIXME: these all are look ugly, but i don't know how to fix */
 	switch (color_type) {
 	case GRAY:
 		if (data[0] > max)
 			die("sBIT: value out of range");
+
 		out("gray(%u)", data[0]);
 		break;
 	case GRAY_ALPHA:
 		if (data[0] > max || data[1] > max)
 			die("sBIT: value out of range");
+
 		out("gray(%u), alpha(%u)", data[0], data[1]);
 		break;
 	case INDEXED: case RGB:
 		if (data[0] > max || data[1] > max || data[2] > max)
 			die("sBIT: value out of range");
+
 		out("red(%u), green(%u), blue(%u)", data[0], data[1], data[2]);
 		break;
 	case RGB_ALPHA:
 		if (data[0] > max || data[1] > max || data[2] > max
 				  || data[3] > max)
 			die("sBIT: value out of range");
+
 		out("red(%u) green(%u) blue(%u) alpha(%u)",
 				data[0], data[1], data[2], data[3]);
 		break;
@@ -740,7 +747,7 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	}
 }
 
-/*
+/**
  * tRNS
  *
  * if grayscale
@@ -809,7 +816,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	}
 }
 
-/*
+/**
  * sPLT (may appear more than one)
  *
  * offset   type    length   value
@@ -829,7 +836,11 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
  */
 static void decode_splt(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len, i = 0;
+	/* at least 1 character palette name, null, and sample depth */
+	if (len < 3)
+		die("sPLT: invalid chunk length");
+
+	uint32_t l = len, i = 0, col, nl, entry;
 	char *palette_name = get_name_or_keyword(data, &i);
 	if (!palette_name)
 		die("sPLT: failed to get palette name");
@@ -843,25 +854,27 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	out("Sample depth = %u", sample_depth);
 
 	data++; l--;
-	if (sample_depth == 8 && (l % 6) == 0) {
-		uint32_t entry = l / 6;
-		out("Entries = %u", entry);
-		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 3, nl++) {
-			printf("\t[%03u]", i);
-			printf(" #%02x%02x%02x ", data[col], data[col+1], data[col+2]);
+	if ((l % 6) != 0 && (l % 10) != 0)
+		die("sPLT: invalid palette length");
+
+	entry = sample_depth == 8 ? l / 6 : l / 10;
+	out("Entries = %u", entry);
+
+	if (sample_depth == 8) {
+		for (i = 0, col = 0, nl = 1; i < entry; i++, col += 3, nl++) {
+			printf("\t[%03u] ", i);
+			printf("#%02x%02x%02x ", data[col], data[col+1], data[col+2]);
 			if ((nl % 3) == 0)
 				putchar('\n');
 		}
-	} else if (sample_depth == 16 && (l % 10) == 0) {
-		uint32_t entry = l / 10;
-		out("Entries = %u", entry);
-		for (uint32_t i = 0, col = 0, nl = 1; i < entry; i++, col += 10, nl++) {
-			printf("\t[%03u]", i);
-			printf(" #%02x%02x", data[col], data[col+1]); // red
-			printf("%02x%02x", data[col+2], data[col+3]); // green
-			printf("%02x%02x", data[col+4], data[col+5]); // blue
-			printf("%02x%02x", data[col+6], data[col+7]); // alpha
-			printf(" (%02x%02x)", data[col+8], data[col+9]); // frequency
+	} else if (sample_depth == 16) {
+		for (i = 0, col = 0, nl = 1; i < entry; i++, col += 10, nl++) {
+			printf("\t[%03u] ", i);
+			printf("#%02x%02x", data[col], data[col+1]); /* red */
+			printf("%02x%02x", data[col+2], data[col+3]); /* green */
+			printf("%02x%02x", data[col+4], data[col+5]); /* blue */
+			printf("%02x%02x", data[col+6], data[col+7]); /* alpha */
+			printf(" (%02x%02x)", data[col+8], data[col+9]); /* frequency */
 			if ((nl % 3) == 0)
 				putchar('\n');
 		}
@@ -870,7 +883,7 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	}
 }
 
-/*
+/**
  * hIST
  *
  * entry = chunk length / 2
@@ -907,7 +920,7 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	}
 }
 
-/*
+/**
  * oFFs
  *
  * offset   type    length   value
@@ -932,7 +945,7 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	out("Image position = %d x %d %s", (int32_t)x, (int32_t)y, unit);
 }
 
-/*
+/**
  * sCAL
  *
  * offset   type    length   value
@@ -967,7 +980,7 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 	printf(" (%s)\n", unit);
 }
 
-/*
+/**
  * pCAL
  *
  * offset   type    length   value
@@ -1043,7 +1056,7 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	putchar('\n');
 }
 
-/*
+/**
  * gIFg
  *
  * offset   type    length   value
@@ -1067,7 +1080,7 @@ static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 	out("Delay time = %lf seconds", (double).01 * delay_time);
 }
 
-/*
+/**
  * sTER
  *
  * offset   type    length   value
@@ -1079,11 +1092,11 @@ static void decode_ext_ster(const uint8_t *data, const uint32_t len)
 	if (len != 1)
 		die("sTER: invalid chunk length");
 
-	char *layout = !!data[0] ? "Diverging-fuse layout" : "Cross-fuse layout";
-	out("Layout = %u (%s)", !!data[0], layout);
+	char *layout = !!data[0] ? "Diverging-fuse" : "Cross-fuse";
+	out("Layout = %u (%s layout)", !!data[0], layout);
 }
 
-/*
+/**
  * gIFx
  *
  * offset   type    length   value
@@ -1102,7 +1115,7 @@ static void decode_ext_gifx(const uint8_t *data, const uint32_t len)
 	out("Application data = .....");
 }
 
-/*
+/**
  * acTL
  *
  * offset   type    length   value
@@ -1126,7 +1139,7 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	out("Number of plays = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
 }
 
-/*
+/**
  * fcTL
  *
  * offset   type    length   value
@@ -1146,15 +1159,15 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	if (len != 26)
 		die("fcTL: invalid chunk length");
 
-	uint32_t buf1[4] = {0}; // width, height, x_offset, y_offset;
-	uint16_t buf2[2] = {0}; // delay_nums, delay_den;
-	uint8_t buf3[2] = {0}; // dispose_op, blend_op;
+	uint32_t buf1[4] = {0}; /* width, height, x_offset, y_offset */
+	uint16_t buf2[2] = {0}; /* delay_nums, delay_den */
+	uint8_t buf3[2] = {0}; /* dispose_op, blend_op */
 	char *dstr[4] = {
 		"None", "Background", "Previous",
 		NULL
 	};
 
-	int offset = 4; // skip sequence_number for now
+	int offset = 4; /* skip sequence_number for now */
 	for (uint8_t i = 0; i < 4; i++) {
 		memcpy(&buf1[i], data + offset, 4);
 		buf1[i] = __builtin_bswap32(buf1[i]);
@@ -1249,7 +1262,7 @@ static void read_chunk(FILE *f)
 		if (offset < 0)
 			die("failed to get chunk offset");
 
-		// read chunk type */
+		/* read chunk type */
 		char type[5] = {0};
 		if (fread(type, 1, 4, f) != 4)
 			die("failed to get chunk type");
