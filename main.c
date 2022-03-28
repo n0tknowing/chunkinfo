@@ -293,7 +293,7 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	if (len % 3 != 0)
 		die("PLTE: invalid chunk length");
 
-	uint32_t i, col, nl;
+	uint32_t i, col;
 
 	plt_entry = len / 3;
 	if (plt_entry > bit_depth_max)
@@ -307,10 +307,10 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 		plt[i][2] = data[col + 2];  /* blue */
 	}
 
-	for (i = 0, nl = 1; i < plt_entry; i++, nl++) {
+	for (i = 0; i < plt_entry; i++) {
 		printf("\t[%03u]", i);
 		printf(" #%02x%02x%02x ", plt[i][0], plt[i][1], plt[i][2]);
-		if ((nl % 3) == 0)
+		if ((i + 1) % 3 == 0)
 			putchar('\n');
 	}
 }
@@ -839,7 +839,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	if (color_type != INDEXED && (len != 2 && len != 6))
 		die("tRNS: invalid chunk length");
 
-	uint32_t i, max, nl;
+	uint32_t i, max;
 	uint16_t gray, r, g, b;
 
 	max = bit_depth_max - 1;
@@ -875,9 +875,9 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 			out("red(%04x), green(%04x), blue(%04x)", r, g, b);
 		break;
 	case INDEXED:
-		for (i = 0, nl = 1; i < len; i++, nl++) {
+		for (i = 0; i < len; i++) {
 			printf("\t[%03u] %02x", i, data[i]);
-			if ((nl % 3) == 0)
+			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
 		break;
@@ -913,10 +913,9 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 
 	char *palette_name;
 	uint8_t sample_depth;
-	uint32_t col, entry, i, l, nl;
+	uint32_t col, entry, i, l;
 
 	i = 0;
-	nl = 1;
 	l = len;
 	col = 0;
 
@@ -941,16 +940,16 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	out("Entries = %u", entry);
 
 	if (sample_depth == 8) {
-		for (i = 0; i < entry; i++, col += 3, nl++) {
+		for (i = 0; i < entry; i++, col += 3) {
 			printf("\t[%03u] ", i);
 			printf("#%02x", data[col]);  /* red */
 			printf("%02x", data[col + 1]);  /* green */
 			printf("%02x", data[col + 2]);  /* blue */
-			if ((nl % 3) == 0)
+			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
 	} else if (sample_depth == 16) {
-		for (i = 0; i < entry; i++, col += 10, nl++) {
+		for (i = 0; i < entry; i++, col += 10) {
 			printf("\t[%03u] ", i);
 			/* red */
 			printf("#%02x%02x", data[col], data[col + 1]);
@@ -962,7 +961,7 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 			printf("%02x%02x", data[col+6], data[col + 7]);
 			/* frequency */
 			printf(" (%02x%02x)", data[col+8], data[col + 9]);
-			if ((nl % 3) == 0)
+			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
 	} else {
@@ -993,8 +992,7 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 
 	int off;
 	uint16_t h;
-	uint32_t i, nl;
-	uint32_t entry;
+	uint32_t i, entry;
 
 	h = 0;
 	off = 0;
@@ -1002,12 +1000,12 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 
 	out("Entries = %u", entry);
 
-	for (i = 0, nl = 1; i < entry; i++, nl++) {
+	for (i = 0; i < entry; i++) {
 		memcpy(&h, data + off, 2);
 		h = __builtin_bswap16(h);
 		off += 2;
 		printf("\t[%03u] %u  ", i, h);
-		if ((nl % 3) == 0)
+		if ((i + 1) % 3 == 0)
 			putchar('\n');
 	}
 }
@@ -1469,7 +1467,7 @@ static void read_chunk(FILE *f)
 	}
 
 	printf("All OK.\n");
-	printf("Found %d chunks from file %s\n", i, pngf);
+	printf("Found %d chunks from %s\n", i, pngf);
 }
 
 int main(int argc, char **argv)
