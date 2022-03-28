@@ -1,10 +1,10 @@
 chunkinfo - show information of PNG chunks
 
-example
--------
+installation and example
+------------------------
 $ make
-$ chunkinfo test.apng
-   [IHDR] length 13 at offset 0x0000000c (f1fde38f)
+$ ./chunkinfo test.apng
+[IHDR] length 13 at offset 0x0000000c (f1fde38f)
 	Width = 51
 	Height = 50
 	Bit depth = 8 per channel
@@ -14,11 +14,11 @@ $ chunkinfo test.apng
 	Filter = 0 (adaptive filtering)
 	Interlace = 0 (no interlace)
 
-   [acTL] length 8 at offset 0x00000025 (f38d9370)
+[acTL] length 8 at offset 0x00000025 (f38d9370)
 	Number of frames = 2
-	Number of plays  = 0 (infinite)
+	Number of plays = 0 (infinite)
 
-   [fcTL] length 26 at offset 0x00000039 (aa53fc21)
+[fcTL] length 26 at offset 0x00000039 (aa53fc21)
 	Width = 51
 	Height = 50
 	X offset = 0
@@ -27,10 +27,10 @@ $ chunkinfo test.apng
 	Disposal = 0 (None)
 	Blend = 1 (Over)
 
-   [IDAT] length 1085 at offset 0x0000005f (80ad91a6)
+[IDAT] length 1085 at offset 0x0000005f (80ad91a6)
 	Image data
 
-   [fcTL] length 26 at offset 0x000004a8 (6257f46c)
+[fcTL] length 26 at offset 0x000004a8 (6257f46c)
 	Width = 23
 	Height = 41
 	X offset = 9
@@ -39,14 +39,14 @@ $ chunkinfo test.apng
 	Disposal = 0 (None)
 	Blend = 1 (Over)
 
-   [fdAT] length 180 at offset 0x000004ce (e64f2ddc)
+[fdAT] length 180 at offset 0x000004ce (e64f2ddc)
 	.....
 
-   [IEND] length 0 at offset 0x0000058e (ae426082)
+[IEND] length 0 at offset 0x0000058e (ae426082)
 	No data
 
 All OK.
-Found 8 chunks from file test.apng
+Found 7 chunks from file test.apng
 
 supported chunks
 ----------------

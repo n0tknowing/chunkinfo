@@ -1298,7 +1298,7 @@ static void read_chunk(FILE *f)
 			die("failed to get chunk crc");
 
 		if (chunk_crc == check) {
-			printf("    [%s] length %u at offset 0x%08lx (%04x)\n",
+			printf("[%s] length %u at offset 0x%08lx (%04x)\n",
 					type, size, offset, chunk_crc);
 			if (data) {
 				decode_chunk_data(data, type, size);
