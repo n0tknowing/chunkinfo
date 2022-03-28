@@ -24,6 +24,7 @@ enum COLOR_TYPE {
 	RGB_ALPHA = 6
 };
 
+static char *pngf;
 static uint8_t plt[256][3];
 static uint8_t bit_depth, color_type;
 static uint32_t plt_entry, bit_depth_max;
@@ -222,7 +223,11 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 
 	bit_depth = data[8], color_type = data[9];
 	check_bit_depth_and_color_type();
+
 	bit_depth_max = 1 << bit_depth;
+
+	uint32_t w, h;
+	uint8_t chan_bytes, comp, filter, interlace;
 	uint8_t chan[] = {
 		[GRAY] = 1,
 		[RGB] = 3,
@@ -230,29 +235,40 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 		[GRAY_ALPHA] = 2,
 		[RGB_ALPHA] = 4
 	};
-	uint8_t chan_bytes = chan[color_type] * bit_depth;
-	uint8_t c = !!data[10], f = !!data[11], i = !!data[12];
-	if (c || f)
-		die("IHDR: invalid value for %s method", c ? "Compression"
-							   : "Filter");
 
-	uint32_t w = 0, h = 0;
+	comp = !!data[10];
+	if (comp)
+		die("IHDR: invalid compression method");
+
+	filter = !!data[11];
+	if (filter)
+		die("IHDR: invalid filter method");
+
+	interlace = !!data[12];
+	if (interlace > 1)
+		die("IHDR: invalid interlace method");
+
+	w = h = 0;
+	chan_bytes = chan[color_type] * bit_depth;
+
 	memcpy(&w, data, 4);
-	memcpy(&h, data + 4, 4);
 	w = __builtin_bswap32(w);
-	h = __builtin_bswap32(h);
+	if (w > INT_MAX - 1)
+		die("IHDR: width is too large");
 
-	if ((w > INT_MAX - 1) || (h > INT_MAX - 1))
-		die("IHDR: width/height is too large");
+	memcpy(&h, data + 4, 4);
+	h = __builtin_bswap32(h);
+	if (h > INT_MAX - 1)
+		die("IHDR: height is too large");
 
 	out("Width = %u", w);
 	out("Height = %u", h);
 	out("Bit depth = %u per channel", bit_depth);
 	out("Color type = %s", cstr[color_type]);
 	out("Channels = %u per pixel (%u bytes)", chan[color_type], chan_bytes);
-	out("Compression = %u (zlib deflate/inflate)", c);
-	out("Filter = %u (adaptive filtering)", f);
-	out("Interlace = %u (%s interlace)", i, i ? "Adam7" : "no");
+	out("Compression = zlib deflate/inflate)");
+	out("Filter = adaptive filtering");
+	out("Interlace = %s interlace", interlace ? "Adam7" : "no");
 }
 
 /**
@@ -277,19 +293,21 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 	if (len % 3 != 0)
 		die("PLTE: invalid chunk length");
 
+	uint32_t i, col, nl;
+
 	plt_entry = len / 3;
 	if (plt_entry > bit_depth_max)
-		die("PLTE: palette entries to large");
+		die("PLTE: palette entries too large");
 
 	out("Entries = %u", plt_entry);
 
-	for (uint32_t i = 0, col = 0; i < plt_entry; i++, col += 3) {
+	for (i = 0, col = 0; i < plt_entry; i++, col += 3) {
 		plt[i][0] = data[col];      /* red */
 		plt[i][1] = data[col + 1];  /* green */
 		plt[i][2] = data[col + 2];  /* blue */
 	}
 
-	for (uint32_t i = 0, nl = 1; i < plt_entry; i++, nl++) {
+	for (i = 0, nl = 1; i < plt_entry; i++, nl++) {
 		printf("\t[%03u]", i);
 		printf(" #%02x%02x%02x ", plt[i][0], plt[i][1], plt[i][2]);
 		if ((nl % 3) == 0)
@@ -300,7 +318,9 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 static void decode_idat(const uint8_t *data, const uint32_t len)
 {
 #if _DECODE_IDAT
-	FILE *f = fopen("idat.z", "ab");
+	FILE *f;
+
+	f = fopen("idat.z", "ab");
 	if (!f)
 		die("IDAT: failed to open idat.z");
 
@@ -336,21 +356,22 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 	if (len != 7)
 		die("tIME: invalid chunk length");
 
-	uint16_t year = 0;
+	uint16_t year;
+	struct tm t;
+	char buf[100] = {0};
+
+	year = 0;
 	memcpy(&year, data, 2);
 	year = __builtin_bswap16(year) - 1900;
 
-	struct tm t = {
-		.tm_sec = data[6] <= 60 ? data[6] : 0,
-		.tm_min = data[5] <= 59 ? data[5] : 0,
-		.tm_hour = data[4] <= 23 ? data[4] : 0,
-		.tm_mday = (data[3] >= 1 && data[3] <= 31) ? data[3] : 1,
-		.tm_mon = (data[2] >= 1 && data[2] <= 12) ? data[2] : 1,
-		.tm_year = year
-	};
+	t.tm_sec = data[6] <= 60 ? data[6] : 0;
+	t.tm_min = data[5] <= 59 ? data[5] : 0;
+	t.tm_hour = data[4] <= 23 ? data[4] : 0;
+	t.tm_mday = (data[3] >= 1 && data[3] <= 31) ? data[3] : 1;
+	t.tm_mon = (data[2] >= 1 && data[2] <= 12) ? data[2] : 1;
+	t.tm_year = year;
 
-	char buf[100] = {0};
-	if (strftime(buf, 99, "%A, %d %b %Y - %I:%M %p", &t))
+	if (strftime(buf, 99, "%d %b %Y - %H:%M", &t))
 		out("Last modification = %s", buf);
 }
 
@@ -368,14 +389,18 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	if (len != 9)
 		die("pHYs: invalid chunk length");
 
-	uint32_t x = 0, y = 0;
+	char *unit;
+	uint32_t x, y, dpi;
+
+	x = y = 0;
+	unit = !!data[8] ? " per meter" : "";
+
 	memcpy(&x, data, 4);
 	memcpy(&y, data + 4, 4);
 	x = __builtin_bswap32(x);
 	y = __builtin_bswap32(y);
 
-	uint32_t dpi = x * 0.0254;
-	const char *unit = !!data[8] ? " per meter" : "";
+	dpi = x * 0.0254;
 
 	out("%u x %u pixels%s (approx. %u DPI)", x, y, unit, dpi);
 }
@@ -446,27 +471,32 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
 	if (len != 32)
 		die("cHRM: invalid chunk length");
 
-	int offset = 0;
+	int offset, i;
 	uint32_t res[8] = {0};
+	uint32_t wx, wy, rx, ry, gx, gy, bx, by;
 
-	for (uint8_t i = 0; i < 8; i++) {
+	offset = 0;
+
+	for (i = 0; i < 8; i++) {
 		memcpy(&res[i], data + offset, 4);
 		res[i] = __builtin_bswap32(res[i]);
 		offset += 4;
 	}
 
-	uint32_t wx = res[0], wy = res[1],
-		 rx = res[2], ry = res[3],
-		 gx = res[4], gy = res[5],
-		 bx = res[6], by = res[7];
-
+	wx = res[0], wy = res[1];
 	if (wx > 80000 || wy > 80000 || (wx + wy) > 100000)
 		die("cHRM: invalid white point");
-	else if (rx > 80000 || ry > 80000 || (rx + ry) > 100000)
+
+	rx = res[2], ry = res[3];
+	if (rx > 80000 || ry > 80000 || (rx + ry) > 100000)
 		die("cHRM: invalid red point");
-	else if (gx > 80000 || gx > 80000 || (gx + gy) > 100000)
+
+	gx = res[4], gy = res[5];
+	if (gx > 80000 || gx > 80000 || (gx + gy) > 100000)
 		die("cHRM: invalid green point");
-	else if (bx > 80000 || by > 80000 || (bx + by) > 100000)
+
+	bx = res[6], by = res[7];
+	if (bx > 80000 || by > 80000 || (bx + by) > 100000)
 		die("cHRM: invalid blue point");
 
 	out("White point x = %01.05f", (float)wx / 100000);
@@ -491,8 +521,13 @@ static void decode_chrm(const uint8_t *data, const uint32_t len)
  */
 static void decode_iccp(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len, i = 0;
-	char *profile_name = get_name_or_keyword(data, &i);
+	uint32_t i, l;
+	char *profile_name;
+
+	i = 0;
+	l = len;
+
+	profile_name = get_name_or_keyword(data, &i);
 	if (!profile_name)
 		die("iCCP: failed to get profile name");
 
@@ -519,8 +554,13 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 static void decode_text(const uint8_t *data, const uint32_t len)
 {
 
-	uint32_t l = len, i = 0;
-	char *keyword = get_name_or_keyword(data, &i);
+	uint32_t i, l;
+	char *keyword;
+
+	i = 0;
+	l = len;
+
+	keyword = get_name_or_keyword(data, &i);
 	if (!keyword)
 		die("tEXt: failed to get keyword");
 
@@ -529,6 +569,7 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	data += i; l -= i;
 
 	data++; l--;
+
 	printf("\tText = ");
 	while (l > 0) {
 		if (valid_keyword(*data))
@@ -556,8 +597,14 @@ static void decode_text(const uint8_t *data, const uint32_t len)
  */
 static void decode_itxt(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len, i = 0;
-	char *keyword = get_name_or_keyword(data, &i);
+	uint32_t i, l;
+	uint8_t comp_flag;
+	char *keyword, *comp;
+
+	i = 0;
+	l = len, i = 0;
+
+	keyword = get_name_or_keyword(data, &i);
 	if (!keyword)
 		die("iTXt: failed to get keyword");
 
@@ -566,8 +613,9 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	data += i; l -= i;
 
 	data++; l--;
-	uint8_t comp_flag = *data;
-	char *comp = !!comp_flag ? "compressed" : "uncompressed";
+
+	comp_flag = !!data[0];
+	comp = comp_flag ? "compressed" : "uncompressed";
 	out("Compression flag = %u (%s)", comp_flag, comp);
 
 	data++; l--;
@@ -599,8 +647,13 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
  */
 static void decode_ztxt(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len, i = 0;
-	char *keyword = get_name_or_keyword(data, &i);
+	uint32_t i, l;
+	char *keyword;
+
+	i = 0;
+	l = len;
+
+	keyword = get_name_or_keyword(data, &i);
 	if (!keyword)
 		die("zTXt: failed to get keyword");
 
@@ -609,7 +662,7 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 	data += i; l -= i;
 
 	data++; l--;
-	out("Compression method = %u (zlib deflate/inflate)", *data);
+	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
 	out("Text (compressed) = .....");
@@ -641,9 +694,12 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		die("bKGD: invalid chunk length");
 
 	uint8_t idx;
+	uint32_t max;
 	uint16_t gray, r, g, b;
-	uint32_t max = bit_depth_max - 1;
 
+	max = bit_depth_max - 1;
+
+	/* die early rather than wait until all value are set */
 	switch (color_type) {
 	case GRAY: case GRAY_ALPHA:
 		memcpy(&gray, data, 2);
@@ -655,13 +711,18 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		break;
 	case RGB: case RGB_ALPHA:
 		memcpy(&r, data, 2);
-		memcpy(&g, data + 2, 2);
-		memcpy(&b, data + 4, 2);
 		r = __builtin_bswap16(r);
-		g = __builtin_bswap16(g);
-		b = __builtin_bswap16(b);
+		if (r > max)
+			die("bKGD: value out of range");
 
-		if (r > max || g > max || b > max)
+		memcpy(&g, data + 2, 2);
+		g = __builtin_bswap16(g);
+		if (g > max)
+			die("bKGD: value out of range");
+
+		memcpy(&b, data + 4, 2);
+		b = __builtin_bswap16(b);
+		if (b > max)
 			die("bKGD: value out of range");
 
 		if (bit_depth < 16)
@@ -674,8 +735,11 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 		if (idx > plt_entry)
 			die("bKGD: palette index out of range");
 
-		out("[%03u] #%02x%02x%02x", idx,
-				plt[idx][0], plt[idx][1], plt[idx][2]);
+		r = plt[idx][0];
+		g = plt[idx][1];
+		b = plt[idx][2];
+
+		out("[%03u] #%02x%02x%02x", idx, r, g, b);
 		break;
 	default:
 		die("bKGD: invalid color type");
@@ -711,39 +775,39 @@ static void decode_sbit(const uint8_t *data, const uint32_t len)
 	if (len < 1 && len > 4)
 		die("sBIT: invalid chunk length");
 
-	uint32_t max = color_type == INDEXED ? 8 : bit_depth;
+	uint32_t i;
+	uint8_t max;
+	uint8_t bit[4];
+	uint8_t gray, r, g, b, alpha;
 
-	/* FIXME: these all are look ugly, but i don't know how to fix */
-	switch (color_type) {
-	case GRAY:
-		if (data[0] > max)
+	max = (color_type == INDEXED) ? 8 : bit_depth;
+
+	for (i = 0; i < len; i++) {
+		bit[i] = data[i];
+		if (bit[i] > max)
 			die("sBIT: value out of range");
+	}
 
-		out("gray(%u)", data[0]);
-		break;
-	case GRAY_ALPHA:
-		if (data[0] > max || data[1] > max)
-			die("sBIT: value out of range");
-
-		out("gray(%u), alpha(%u)", data[0], data[1]);
-		break;
-	case INDEXED: case RGB:
-		if (data[0] > max || data[1] > max || data[2] > max)
-			die("sBIT: value out of range");
-
-		out("red(%u), green(%u), blue(%u)", data[0], data[1], data[2]);
-		break;
-	case RGB_ALPHA:
-		if (data[0] > max || data[1] > max || data[2] > max
-				  || data[3] > max)
-			die("sBIT: value out of range");
-
-		out("red(%u) green(%u) blue(%u) alpha(%u)",
-				data[0], data[1], data[2], data[3]);
-		break;
-	default:
+	if (color_type == GRAY && i == 1) {
+		gray = bit[0];
+		out("gray(%u)", gray);
+	} else if (color_type == GRAY_ALPHA && i == 2) {
+		gray = bit[0];
+		alpha = bit[1];
+		out("gray(%u), alpha(%u)", gray, alpha);
+	} else if ((color_type == INDEXED || color_type == RGB) && i == 3) {
+		r = bit[0];
+		g = bit[1];
+		b = bit[2];
+		out("red(%u), green(%u), blue(%u)", r, g, b);
+	} else if (color_type == RGB_ALPHA && i == 4) {
+		r = bit[0];
+		g = bit[1];
+		b = bit[2];
+		alpha = bit[3];
+		out("red(%u), green(%u), blue(%u), alpha(%u)", r, g, b, alpha);
+	} else {
 		die("sBIT: invalid color type");
-		break;
 	}
 }
 
@@ -775,8 +839,10 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 	if (color_type != INDEXED && (len != 2 && len != 6))
 		die("tRNS: invalid chunk length");
 
+	uint32_t i, max, nl;
 	uint16_t gray, r, g, b;
-	uint32_t max = bit_depth_max - 1;
+
+	max = bit_depth_max - 1;
 
 	switch (color_type) {
 	case GRAY:
@@ -789,13 +855,18 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 		break;
 	case RGB:
 		memcpy(&r, data, 2);
-		memcpy(&g, data + 2, 2);
-		memcpy(&b, data + 4, 2);
 		r = __builtin_bswap16(r);
-		g = __builtin_bswap16(g);
-		b = __builtin_bswap16(b);
+		if (r > max)
+			die("tRNS: value out of range");
 
-		if (r > max || g > max || b > max)
+		memcpy(&g, data + 2, 2);
+		g = __builtin_bswap16(g);
+		if (g > max)
+			die("tRNS: value out of range");
+
+		memcpy(&b, data + 4, 2);
+		b = __builtin_bswap16(b);
+		if (b > max)
 			die("tRNS: value out of range");
 
 		if (bit_depth < 16)
@@ -804,7 +875,7 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 			out("red(%04x), green(%04x), blue(%04x)", r, g, b);
 		break;
 	case INDEXED:
-		for (uint32_t i = 0, nl = 1; i < len; i++, nl++) {
+		for (i = 0, nl = 1; i < len; i++, nl++) {
 			printf("\t[%03u] %02x", i, data[i]);
 			if ((nl % 3) == 0)
 				putchar('\n');
@@ -840,17 +911,26 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	if (len < 3)
 		die("sPLT: invalid chunk length");
 
-	uint32_t l = len, i = 0, col, nl, entry;
-	char *palette_name = get_name_or_keyword(data, &i);
+	char *palette_name;
+	uint8_t sample_depth;
+	uint32_t col, entry, i, l, nl;
+
+	i = 0;
+	nl = 1;
+	l = len;
+	col = 0;
+
+	palette_name = get_name_or_keyword(data, &i);
 	if (!palette_name)
 		die("sPLT: failed to get palette name");
 
 	out("Palette name = %s", palette_name);
 	free(palette_name);
-	data += i; l -= i;
+	data += i;
+	l -= i;
 
 	data++; l--;
-	uint8_t sample_depth = *data;
+	sample_depth = data[0];
 	out("Sample depth = %u", sample_depth);
 
 	data++; l--;
@@ -861,20 +941,27 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	out("Entries = %u", entry);
 
 	if (sample_depth == 8) {
-		for (i = 0, col = 0, nl = 1; i < entry; i++, col += 3, nl++) {
+		for (i = 0; i < entry; i++, col += 3, nl++) {
 			printf("\t[%03u] ", i);
-			printf("#%02x%02x%02x ", data[col], data[col+1], data[col+2]);
+			printf("#%02x", data[col]);  /* red */
+			printf("%02x", data[col + 1]);  /* green */
+			printf("%02x", data[col + 2]);  /* blue */
 			if ((nl % 3) == 0)
 				putchar('\n');
 		}
 	} else if (sample_depth == 16) {
-		for (i = 0, col = 0, nl = 1; i < entry; i++, col += 10, nl++) {
+		for (i = 0; i < entry; i++, col += 10, nl++) {
 			printf("\t[%03u] ", i);
-			printf("#%02x%02x", data[col], data[col+1]); /* red */
-			printf("%02x%02x", data[col+2], data[col+3]); /* green */
-			printf("%02x%02x", data[col+4], data[col+5]); /* blue */
-			printf("%02x%02x", data[col+6], data[col+7]); /* alpha */
-			printf(" (%02x%02x)", data[col+8], data[col+9]); /* frequency */
+			/* red */
+			printf("#%02x%02x", data[col], data[col + 1]);
+			/* green */
+			printf("%02x%02x", data[col+2], data[col + 3]);
+			/* blue */
+			printf("%02x%02x", data[col+4], data[col + 5]);
+			/* alpha */
+			printf("%02x%02x", data[col+6], data[col + 7]);
+			/* frequency */
+			printf(" (%02x%02x)", data[col+8], data[col + 9]);
 			if ((nl % 3) == 0)
 				putchar('\n');
 		}
@@ -904,16 +991,21 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 	if (plt_entry == 0)
 		die("hIST: cannot find PLTE chunk");
 
-	const uint32_t entry = len / 2;
+	int off;
+	uint16_t h;
+	uint32_t i, nl;
+	uint32_t entry;
+
+	h = 0;
+	off = 0;
+	entry = len / 2;
+
 	out("Entries = %u", entry);
 
-	uint16_t h = 0;
-	int off = 0;
-	for (uint32_t i = 0, nl = 1; i < entry; i++, nl++) {
+	for (i = 0, nl = 1; i < entry; i++, nl++) {
 		memcpy(&h, data + off, 2);
 		h = __builtin_bswap16(h);
 		off += 2;
-
 		printf("\t[%03u] %u  ", i, h);
 		if ((nl % 3) == 0)
 			putchar('\n');
@@ -934,13 +1026,16 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	if (len != 9)
 		die("oFFs: invalid chunk length");
 
-	uint32_t x = 0, y = 0;
-	memcpy(&x, data, 4);
-	memcpy(&y, data + 4, 4);
+	char *unit;
+	uint32_t x, y;
 
+	memcpy(&x, data, 4);
 	x = __builtin_bswap32(x);
+
+	memcpy(&y, data + 4, 4);
 	y = __builtin_bswap32(y);
-	char *unit = !!data[8] ? "micrometres" : "pixels";
+
+	unit = !!data[8] ? "micrometres" : "pixels";
 
 	out("Image position = %d x %d %s", (int32_t)x, (int32_t)y, unit);
 }
@@ -957,21 +1052,25 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
  */
 static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len;
+	if (data[0] < 1 && data[0] > 2)
+		die("sCAL: invalid unit specifier");
 
-	char *unit = data[0] == 1 ? "meters" : data[0] == 2 ? "radians" : "invalid unit";
-	data++; l--;
+	char *unit;
+	uint32_t l;
 
+	unit = data[0] == 1 ? "meters" : "radians";
+	l = len;
+
+	data++; l--; /* next */
 	printf("\tPhysical scale = ");
-
 	while (*data) {
 		if (valid_keyword(*data))
 			putchar(*data);
 		data++; l--;
 	}
-	data++; l--;
-	printf(" x ");
 
+	data++; l--; /* next */
+	printf(" x ");
 	while (l > 0) {
 		if (valid_keyword(*data))
 			putchar(*data);
@@ -999,51 +1098,75 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
  */
 static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 {
-	uint32_t l = len, i = 0;
-	char *name = get_name_or_keyword(data, &i);
+	uint8_t eq_type, params;
+	char *eq_str, *name;
+	uint32_t i, l, x0, x1;
+	char *eq_arr[5] = {
+		"linear", "exponential",
+		"exponential arbitrary base", "hyperbolic sinusoidal",
+		NULL
+	};
+
+	l = len;
+	i = x0 = x1 = 0;
+
+	/* get calibration name */
+	name = get_name_or_keyword(data, &i);
 	if (!name)
 		die("pCAL: failed to get calibration name");
 
 	out("Calibration name = %s", name);
-	free(name); name = NULL;
-	data += i; l -= i; i = 0;
+	free(name);
 
-	data++; l--;
-	uint32_t x0 = 0, x1 = 0;
+	name = NULL;
+	data += i; l -= i;
+	i = 0;
+
+	data++; l--; /* next */
+
+	/* get x0 and x1 */
 	memcpy(&x0, data, 4);
 	x0 = __builtin_bswap32(x0);
 	data += 4; l-= 4;
+
 	memcpy(&x1, data, 4);
 	x1 = __builtin_bswap32(x1);
 	data += 4; l-= 4;
 
 	out("Linear conversion = %d x %d", (int32_t)x0, (int32_t)x1);
 
-	uint8_t eq_type = *data;
-	char *eqs[] = {
-		"linear", "exponential",
-		"exponential arbitrary base", "hyperbolic sinusoidal",
-		NULL
-	};
-	char *eq_s = eq_type <= 3 ? eqs[eq_type] : "invalid";
-	data++; l--;
-	out("Equation type = %u (%s)", eq_type, eq_s);
+	/* get equation type */
+	eq_type = data[0];
+	if (eq_type > 3)
+		die("pCAL: invalid equation type");
 
-	uint8_t params = *data;
-	data++; l--;
+	eq_str = eq_arr[eq_type];
+	out("Equation type = %u (%s)", eq_type, eq_str);
+
+	data++; l--; /* next */
+
+	/* get total of parameters */
+	params = data[0];
 	out("Parameters = %u", params);
 
+	data++; l--; /* next */
+
+	/* get unit name */
 	name = get_name_or_keyword(data, &i);
 	if (!name)
 		die("pCAL: failed to get unit name");
 
 	out("Unit name = %s", name);
 	free(name);
+
+	name = NULL;
 	data += i; l -= i;
 
-	data++; l--;
+	data++; l--; /* next */
+
+	/* print all values */
 	printf("\tValues = ");
-	for (uint8_t i = 0; i < params; i++) {
+	for (i = 0; i < params; i++) {
 		while (l > 0) {
 			if (valid_keyword(*data))
 				putchar(*data);
@@ -1070,8 +1193,13 @@ static void decode_ext_gifg(const uint8_t *data, const uint32_t len)
 	if (len != 4)
 		die("gIFg: invalid chunk length");
 
-	uint8_t dis = data[0], input = data[1];
-	uint16_t delay_time = 0;
+	uint8_t dis, input;
+	uint16_t delay_time;
+
+	dis = data[0];
+	input = data[1];
+	delay_time = 0;
+
 	memcpy(&delay_time, data + 2, 2);
 	delay_time = __builtin_bswap16(delay_time);
 
@@ -1092,8 +1220,12 @@ static void decode_ext_ster(const uint8_t *data, const uint32_t len)
 	if (len != 1)
 		die("sTER: invalid chunk length");
 
+	if (data[0] > 1)
+		die("sTER: invalid layout");
+
 	char *layout = !!data[0] ? "Diverging-fuse" : "Cross-fuse";
-	out("Layout = %u (%s layout)", !!data[0], layout);
+
+	out("Layout = %s layout", layout);
 }
 
 /**
@@ -1128,7 +1260,9 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	if (len != 8)
 		die("acTL: invalid chunk length");
 
-	uint32_t nframes = 0, nplays = 0;
+	uint32_t nframes, nplays;
+
+	nframes = nplays = 0;
 	memcpy(&nframes, data, 4);
 	memcpy(&nplays, data + 4, 4);
 
@@ -1136,7 +1270,7 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	nplays = __builtin_bswap32(nplays);
 
 	out("Number of frames = %u", nframes);
-	out("Number of plays = %u %s", nplays, nplays == 0 ? "(infinite)" : "");
+	out("Number of plays = %u %s", nplays, nplays ? "" : "(infinite)");
 }
 
 /**
@@ -1159,31 +1293,38 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 	if (len != 26)
 		die("fcTL: invalid chunk length");
 
+	uint8_t i;
+	int offset;
+	char *dispose, *blend;
+	char *bl_str[3] = { "Source", "Over", NULL };
+	char *dis_str[4] = { "None", "Background", "Previous", NULL };
+
 	uint32_t buf1[4] = {0}; /* width, height, x_offset, y_offset */
 	uint16_t buf2[2] = {0}; /* delay_nums, delay_den */
 	uint8_t buf3[2] = {0}; /* dispose_op, blend_op */
-	char *dstr[4] = {
-		"None", "Background", "Previous",
-		NULL
-	};
 
-	int offset = 4; /* skip sequence_number for now */
-	for (uint8_t i = 0; i < 4; i++) {
+	offset = 4; /* skip sequence_number for now */
+	for (i = 0; i < 4; i++) {
 		memcpy(&buf1[i], data + offset, 4);
 		buf1[i] = __builtin_bswap32(buf1[i]);
 		offset += 4;
 	}
 
-	for (uint8_t i = 0; i < 2; i++) {
+	for (i = 0; i < 2; i++) {
 		memcpy(&buf2[i], data + offset, 2);
 		buf2[i] = __builtin_bswap16(buf2[i]);
 		offset += 2;
 	}
 
 	buf3[0] = data[offset];
+	if (buf3[0] > 3)
+		die("fcTL: invalid disposal method");
+	dispose = dis_str[buf3[0]];
+
 	buf3[1] = data[offset + 1];
-	char *dispose = (buf3[0] <= 3) ? dstr[buf3[0]] : "Invalid";
-	char *blend = buf3[1] == 0 ? "Source" : buf3[1] == 1 ? "Over" : "Invalid";
+	if (buf3[1] > 1)
+		die("fcTL: invalid blend method");
+	blend = bl_str[buf3[1]];
 
 	out("Width = %u", buf1[0]);
 	out("Height = %u", buf1[1]);
@@ -1202,7 +1343,9 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 		} \
 	} while (0)
 
-static void decode_chunk_data(const uint8_t *data, const char *type, const uint32_t len)
+static void decode_chunk_data(const uint8_t *data,
+			      const char *type,
+			      const uint32_t len)
 {
 	/* Critical chunks */
 	decode_if("IHDR", decode_ihdr);
@@ -1243,14 +1386,25 @@ static void decode_chunk_data(const uint8_t *data, const char *type, const uint3
 
 static void read_chunk(FILE *f)
 {
-	int not_iend = 1, i = 0;
+	int not_iend, i;
+
+	i = 0;
+	not_iend = 1;
+
 	while (not_iend) {
-		errno = 0;
 		if (i == MAX_CHUNK)
 			break;
 
+		long offset;
+		uint8_t *data;
+		char type[5] = {0};
+		uint32_t check, chunk_crc, size;
+
+		errno = 0;
+		data = NULL;
+
 		/* read chunk length */
-		uint32_t size = fread_u32(f);
+		size = fread_u32(f);
 		if (errno)
 			die("failed to get chunk length");
 
@@ -1258,26 +1412,24 @@ static void read_chunk(FILE *f)
 			die("chunk length out of range");
 
 		/* get current chunk offset */
-		long offset = ftell(f);
+		offset = ftell(f);
 		if (offset < 0)
 			die("failed to get chunk offset");
 
 		/* read chunk type */
-		char type[5] = {0};
 		if (fread(type, 1, 4, f) != 4)
 			die("failed to get chunk type");
 
 		if (i == 0 && strcmp(type, "IHDR"))
-			die("first chunk found non-IHDR");
+			die("first chunk found is not IHDR");
 
 		if (!strcmp(type, "IEND"))
 			not_iend = 0;
 
 		/* crc chunk type to check */
-		uint32_t check = pd_crc32(0u, type, 4);
+		check = pd_crc32(0u, type, 4);
 
 		/* read chunk data */
-		uint8_t *data = NULL;
 		if (size > 0) {
 			data = malloc(size);
 			if (!data)
@@ -1293,7 +1445,7 @@ static void read_chunk(FILE *f)
 		}
 
 		/* read chunk crc */
-		uint32_t chunk_crc = fread_u32(f);
+		chunk_crc = fread_u32(f);
 		if (errno)
 			die("failed to get chunk crc");
 
@@ -1317,32 +1469,30 @@ static void read_chunk(FILE *f)
 	}
 
 	printf("All OK.\n");
-	printf("Found %d chunks from file ", i);
-}
-
-static int run(int argc, char **argv)
-{
-	if (argc < 2)
-		die("usage: %s file.png", argv[0]);
-
-	errno = 0;
-	FILE *f = fopen(argv[1], "rb");
-	if (!f)
-		die("%s: failed to open file", argv[1]);
-
-	if (png_ok(f)) {
-		read_chunk(f);
-		printf("%s\n", argv[1]);
-	} else {
-		fclose(f);
-		die("%s: not a valid PNG file", argv[1]);
-	}
-
-	fclose(f);
-	return errno;
+	printf("Found %d chunks from file %s\n", i, pngf);
 }
 
 int main(int argc, char **argv)
 {
-	return run(argc, argv);
+	if (argc < 2)
+		die("usage: %s file.png", argv[0]);
+
+	FILE *f;
+
+	pngf = argv[1];
+	errno = 0;
+
+	f = fopen(pngf, "rb");
+	if (!f)
+		die("%s: failed to open file", pngf);
+
+	if (png_ok(f)) {
+		read_chunk(f);
+	} else {
+		fclose(f);
+		die("%s: not a valid PNG file", pngf);
+	}
+
+	fclose(f);
+	return errno;
 }
