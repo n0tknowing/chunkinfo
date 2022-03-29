@@ -898,12 +898,11 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
  *  n+2    uint8/16  1/2     red color *
  *  n+3    uint8/16  1/2     green color *
  *  n+4    uint8/16  1/2     blue color *
- *  n+5    uint8/16  1/2     alpha **
- *  n+6    uint16     2      frequency **
+ *  n+5    uint8/16  1/2     alpha *
+ *  n+6    uint16     2      frequency
  *
  *  * = if sample depth is 8, then type is uint8 and each length is 1
  *      otherwise, it's 16, then type is uint16 and each length is 2
- *  ** = only appear if sample depth is 16
  */
 static void decode_splt(const uint8_t *data, const uint32_t len)
 {
@@ -940,11 +939,18 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	out("Entries = %u", entry);
 
 	if (sample_depth == 8) {
-		for (i = 0; i < entry; i++, col += 3) {
+		for (i = 0; i < entry; i++, col += 6) {
 			printf("\t[%03u] ", i);
-			printf("#%02x", data[col]);  /* red */
-			printf("%02x", data[col + 1]);  /* green */
-			printf("%02x", data[col + 2]);  /* blue */
+			/* red */
+			printf("#%02x", data[col]);
+			/* green */
+			printf("%02x", data[col+1]);
+			/* blue */
+			printf("%02x", data[col+2]);
+			/* alpha */
+			printf("%02x", data[col+3]);
+			/* frequency */
+			printf(" (%02x%02x)", data[col+4], data[col+5]);
 			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
@@ -952,15 +958,15 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 		for (i = 0; i < entry; i++, col += 10) {
 			printf("\t[%03u] ", i);
 			/* red */
-			printf("#%02x%02x", data[col], data[col + 1]);
+			printf("#%02x%02x", data[col], data[col+1]);
 			/* green */
-			printf("%02x%02x", data[col+2], data[col + 3]);
+			printf("%02x%02x", data[col+2], data[col+3]);
 			/* blue */
-			printf("%02x%02x", data[col+4], data[col + 5]);
+			printf("%02x%02x", data[col+4], data[col+5]);
 			/* alpha */
-			printf("%02x%02x", data[col+6], data[col + 7]);
+			printf("%02x%02x", data[col+6], data[col+7]);
 			/* frequency */
-			printf(" (%02x%02x)", data[col+8], data[col + 9]);
+			printf(" (%02x%02x)", data[col+8], data[col+9]);
 			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
