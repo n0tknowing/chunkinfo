@@ -97,5 +97,6 @@ notes
 This software is far from perfect, no chunk checking like chunk ordering
 of IDAT and PLTE, because there are chunks that need to appear before
 IDAT and PLTE like cHRM, gAMA, and iCPP.
+The error message is not really useful too.
 
 And last, chunkinfo is public domain.
