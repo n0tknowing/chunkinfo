@@ -82,6 +82,7 @@ references
 - http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
 - https://www.w3.org/TR/2003/REC-PNG-20031110
 - http://www.libpng.org/pub/png/book/toc.html
+- http://www.libpng.org/pub/png/spec/register
 - http://www.schaik.com/pngsuite
 - https://wiki.mozilla.org/APNG_Specification
 - https://philip.html5.org/tests/apng/tests.html
