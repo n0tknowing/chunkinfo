@@ -2,22 +2,34 @@ CC      = gcc
 CFLAGS  = -std=c99 -Wall -Wextra -Wstrict-prototypes -Wpedantic
 SRC     = main.c
 BIN     = chunkinfo
-RM      = rm -f
+RM      = rm -rf
 CTAGS   = ctags
+IDAT    = -D_DECODE_IDAT
+PS      = http://www.schaik.com/pngsuite/PngSuite-2017jul19.tgz
 
-.default: build
+.default: no-idat
 
-build:
+no-idat:
 	$(CC) $(CFLAGS) $(SRC) -o $(BIN)
 
+idat:
+	$(CC) $(CFLAGS) $(IDAT) $(SRC) -o $(BIN)
+
 debug:
-	$(CC) $(CFLAGS) -g $(SRC) -o $(BIN)
+	$(CC) $(CFLAGS) $(IDAT) -g $(SRC) -o $(BIN)
 
 debug-asan:
-	$(CC) $(CFLAGS) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
+	$(CC) $(CFLAGS) $(IDAT) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
 
 clean:
-	$(RM) $(BIN) tags
+	$(RM) $(BIN) tags test
+
+get-test:
+	@echo "PngSuite"
+	mkdir -p test
+	curl -s $(PS) -o test/pngsuite.tgz
+	tar xfz test/pngsuite.tgz -C test/
+	@echo "OK"
 
 tags:
 	$(CTAGS) $(SRC)
