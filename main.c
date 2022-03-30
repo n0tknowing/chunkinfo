@@ -313,6 +313,9 @@ static void decode_plte(const uint8_t *data, const uint32_t len)
 		if ((i + 1) % 3 == 0)
 			putchar('\n');
 	}
+
+	if (i % 3 != 0)
+		putchar('\n');
 }
 
 static void decode_idat(const uint8_t *data, const uint32_t len)
@@ -886,6 +889,9 @@ static void decode_trns(const uint8_t *data, const uint32_t len)
 			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
+
+		if (i % 3 != 0)
+			putchar('\n');
 		break;
 	default:
 		die("tRNS: invalid color type");
@@ -935,6 +941,9 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 
 	data++; l--;
 	sample_depth = data[0];
+	if (sample_depth != 8 && sample_depth != 16)
+		die("sPLT: invalid sample depth");
+
 	out("Sample depth = %u", sample_depth);
 
 	data++; l--;
@@ -976,9 +985,10 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 			if ((i + 1) % 3 == 0)
 				putchar('\n');
 		}
-	} else {
-		die("sPLT: invalid sample depth");
 	}
+
+	if (i % 3 != 0)
+		putchar('\n');
 }
 
 /**
@@ -1020,6 +1030,9 @@ static void decode_hist(const uint8_t *data, const uint32_t len)
 		if ((i + 1) % 3 == 0)
 			putchar('\n');
 	}
+
+	if (i % 3 != 0)
+		putchar('\n');
 }
 
 /**
