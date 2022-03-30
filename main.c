@@ -105,9 +105,11 @@ static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 
 static uint32_t fread_u32(FILE *f)
 {
-	uint32_t ret = 0;
+	uint32_t ret;
+
+	ret = 0;
 	if (fread(&ret, 4, 1, f) != 1)
-		errno = ferror(f) ? EIO : EINVAL;
+		errno = EIO;
 
 	return __builtin_bswap32(ret);
 }
@@ -117,12 +119,14 @@ static uint32_t fread_u32(FILE *f)
 static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 {
 	if (data && len) {
-		size_t i = 0;
-		char *ret = calloc(80, 1);
+		size_t i;
+		char *ret;
+
+		ret = calloc(80, 1);
 		if (!ret)
 			return NULL;
 
-		for (; i < 79; i++) {
+		for (i = 0; i < 79; i++) {
 			if (data[i] && valid_keyword(data[i]))
 				ret[i] = data[i];
 			else
@@ -139,17 +143,15 @@ static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 static void die(const char *msg, ...)
 {
 	va_list ap;
-	int save = errno;
 
 	va_start(ap, msg);
 	vfprintf(stderr, msg, ap);
-	if (save)
+	if (errno)
 		fprintf(stderr, " (%s)\n", strerror(save));
 	else
 		fputc('\n', stderr);
 	va_end(ap);
 
-	errno = save;
 	exit(1);
 }
 
@@ -168,11 +170,15 @@ static int png_ok(FILE *f)
 {
 	uint8_t buf[8];
 
-	if (fread(buf, 1, 8, f) != 8)
+	if (fread(buf, 1, 8, f) != 8) {
+		errno = EIO;  /* reached EOF or I/O error */
 		return 0;
+	}
+
 	if (!memcmp(buf, "\x89\x50\x4e\x47\x0d\x0a\x1a\x0a", 8))
 		return 1;
 
+	errno = EINVAL;  /* invalid PNG signature */
 	return 0;
 }
 
@@ -359,8 +365,8 @@ static void decode_time(const uint8_t *data, const uint32_t len)
 	if (len != 7)
 		die("tIME: invalid chunk length");
 
-	uint16_t year;
 	struct tm t;
+	uint16_t year;
 	char buf[100] = {0};
 
 	year = 0;
@@ -399,8 +405,9 @@ static void decode_phys(const uint8_t *data, const uint32_t len)
 	unit = !!data[8] ? " per meter" : "";
 
 	memcpy(&x, data, 4);
-	memcpy(&y, data + 4, 4);
 	x = __builtin_bswap32(x);
+
+	memcpy(&y, data + 4, 4);
 	y = __builtin_bswap32(y);
 
 	dpi = x * 0.0254;
@@ -447,6 +454,7 @@ static void decode_gama(const uint8_t *data, const uint32_t len)
 		die("gAMA: invalid chunk length");
 
 	uint32_t gama = 0;
+
 	memcpy(&gama, data, 4);
 	gama = __builtin_bswap32(gama);
 	if (gama == 0)
@@ -539,7 +547,7 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 	data += i; l -= i;
 
 	data++; l--;
-	out("Compression method = %u (zlib deflate/inflate)", *data);
+	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
 	out("Profile (compressed) = ......");
@@ -622,7 +630,7 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	out("Compression flag = %u (%s)", comp_flag, comp);
 
 	data++; l--;
-	out("Compression method = %u (zlib deflate/inflate)", *data);
+	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
 	printf("\tLanguage tag = ");
@@ -702,7 +710,6 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
 
 	max = bit_depth_max - 1;
 
-	/* die early rather than wait until all value are set */
 	switch (color_type) {
 	case GRAY: case GRAY_ALPHA:
 		memcpy(&gray, data, 2);
@@ -1052,13 +1059,14 @@ static void decode_ext_offs(const uint8_t *data, const uint32_t len)
 	char *unit;
 	uint32_t x, y;
 
+	x = y = 0;
+	unit = !!data[8] ? "micrometres" : "pixels";
+
 	memcpy(&x, data, 4);
 	x = __builtin_bswap32(x);
 
 	memcpy(&y, data + 4, 4);
 	y = __builtin_bswap32(y);
-
-	unit = !!data[8] ? "micrometres" : "pixels";
 
 	out("Image position = %d x %d %s", (int32_t)x, (int32_t)y, unit);
 }
@@ -1286,10 +1294,11 @@ static void decode_apng_actl(const uint8_t *data, const uint32_t len)
 	uint32_t nframes, nplays;
 
 	nframes = nplays = 0;
-	memcpy(&nframes, data, 4);
-	memcpy(&nplays, data + 4, 4);
 
+	memcpy(&nframes, data, 4);
 	nframes = __builtin_bswap32(nframes);
+
+	memcpy(&nplays, data + 4, 4);
 	nplays = __builtin_bswap32(nplays);
 
 	out("Number of frames = %u", nframes);
