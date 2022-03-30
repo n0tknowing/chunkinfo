@@ -1418,6 +1418,9 @@ static void read_chunk(FILE *f)
 		if (i == MAX_CHUNK)
 			break;
 
+		if (i > 0 && (feof(f) || ferror(f)))
+			die("failed to read chunk");
+
 		long offset;
 		uint8_t *data;
 		char type[5] = {0};
