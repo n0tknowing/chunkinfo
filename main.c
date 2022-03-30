@@ -755,6 +755,12 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
  * -------------------------------
  *   0      uint8     1      significant bits for gray
  *
+ * if grayscale+alpha
+ * offset   type    length   value
+ * -------------------------------
+ *   0      uint8     1      significant bits for gray
+ *   1      uint8     1      significant bits for alpha
+ *
  * if indexed or rgb
  * offset   type    length   value
  * -------------------------------
@@ -762,7 +768,7 @@ static void decode_bkgd(const uint8_t *data, const uint32_t len)
  *   1      uint8     1      significant bits for green
  *   2      uint8     1      significant bits for blue
  *
- * if grayscale+alpha or rgb+alpha
+ * if rgb+alpha
  * offset   type    length   value
  * -------------------------------
  *   0      uint8     1      significant bits for red
