@@ -581,7 +581,6 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
  */
 static void decode_text(const uint8_t *data, const uint32_t len)
 {
-
 	uint32_t i, l;
 	char *keyword;
 
@@ -625,17 +624,18 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 {
 	uint32_t i, l;
 	uint8_t comp_flag;
-	char *keyword, *comp;
+	char *buf, *comp;
 
 	i = 0;
 	l = len;
 
-	keyword = get_name_or_keyword(data, &i);
-	if (!keyword)
+	buf = get_name_or_keyword(data, &i);
+	if (!buf)
 		die("iTXt: failed to get keyword");
 
-	out("Keyword = %s", keyword);
-	free(keyword);
+	out("Keyword = %s", buf);
+	free(buf);
+	buf = NULL;
 	data += i; l -= i;
 
 	comp_flag = !!data[0];
@@ -646,15 +646,15 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
-	printf("\tLanguage tag = ");
-	while (*data) {
-		if (valid_keyword(*data))
-			putchar(*data);
-		data++; l--;
-	}
-	putchar('\n');
+	buf = get_name_or_keyword(data, &i);
+	if (!buf)
+		die("iTXt: failed to get language tag");
 
-	data++; l--;
+	out("Language tag = %s", buf);
+	free(buf);
+
+	data += i; l -= i;
+
 	out("Translated keyword (UTF-8) = .....");
 	out("Text (UTF-8) = .....");
 }
