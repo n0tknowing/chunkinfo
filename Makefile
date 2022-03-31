@@ -22,7 +22,7 @@ debug-asan:
 	$(CC) $(CFLAGS) $(IDAT) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
 
 clean:
-	$(RM) $(BIN) tags test
+	$(RM) $(BIN) tags test *.zlib
 
 get-test:
 	@echo "PngSuite"

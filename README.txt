@@ -52,7 +52,7 @@ supported chunks
 ----------------
 - IHDR
 - PLTE
-- IDAT (with -D_DECODE_IDAT, but only created a zlib file, so you need to manually decompress the zlib file)
+- IDAT [*]
 - tIME
 - pHYs
 - sRGB
@@ -76,6 +76,11 @@ supported chunks
 - sTER (PNG official extension)
 - acTL (from APNG)
 - fcTL (from APNG)
+
+[*] = compile it with "make idat", it will create a file with filename
+      "filename-IDAT.zlib", but if you want to run chunkinfo with same PNG
+      file, you need to remove the previous "filename-IDAT.zlib", if not,
+      in the next run it will append new IDAT to the same zlib file.
 
 references
 ----------

@@ -14,7 +14,8 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_CHUNK 256
+#define MAX_CHUNK     256
+#define MAX_IDAT_PATH 512
 
 enum COLOR_TYPE {
 	GRAY = 0,
@@ -24,7 +25,7 @@ enum COLOR_TYPE {
 	RGB_ALPHA = 6
 };
 
-static char *pngf;
+static const char *pngf;
 static uint8_t plt[256][3];
 static uint8_t bit_depth, color_type;
 static uint32_t plt_entry, bit_depth_max;
@@ -101,6 +102,18 @@ static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 		crc = crc32_table[(crc ^ p[n]) & 0xff] ^ (crc >> 8);
 
 	return crc ^ 0xffffffff;
+}
+
+static const char *pd_basename(const char *old)
+{
+	const char *s;
+
+	for (s = old; *old; old++) {
+		if (*old == '/')
+			s = old + 1;
+	}
+
+	return s;
 }
 
 static uint32_t fread_u32(FILE *f)
@@ -328,19 +341,24 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 {
 #if _DECODE_IDAT
 	FILE *f;
+	const char *idatf;
+	char temp[MAX_IDAT_PATH];
 
-	f = fopen("idat.z", "ab");
+	snprintf(temp, MAX_IDAT_PATH, "%s-IDAT.zlib", pngf);
+	idatf = pd_basename(temp);
+
+	f = fopen(idatf, "ab");
 	if (!f)
-		die("IDAT: failed to open idat.z");
+		die("IDAT: failed to open %s", idatf);
 
 	if (fwrite(data, 1, len, f) != len) {
 		fclose(f);
-		die("IDAT: failed to write idat.z");
+		die("IDAT: failed to write %s", idatf);
 	}
 
 	fclose(f);
 
-	out("See idat.z");
+	out("See %s", idatf);
 #else
 	(void)data; (void)len;
 
