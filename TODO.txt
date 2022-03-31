@@ -1,0 +1,5 @@
+TODO:
+- iCCP decoder (decompress then only show some informations ??)
+- iTXt decoder (need utf8 library)
+- zTXt decoder (decompress then show the decompressed string)
+- check chunk ordering
