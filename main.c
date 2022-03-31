@@ -133,7 +133,7 @@ static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 				break;
 		}
 
-		*len = i;
+		*len = i + 1;  /* + 1 null character */
 		return ret;
 	}
 
@@ -147,7 +147,7 @@ static void die(const char *msg, ...)
 	va_start(ap, msg);
 	vfprintf(stderr, msg, ap);
 	if (errno)
-		fprintf(stderr, " (%s)\n", strerror(save));
+		fprintf(stderr, " (%s)\n", strerror(errno));
 	else
 		fputc('\n', stderr);
 	va_end(ap);
@@ -546,7 +546,6 @@ static void decode_iccp(const uint8_t *data, const uint32_t len)
 	free(profile_name);
 	data += i; l -= i;
 
-	data++; l--;
 	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
@@ -578,8 +577,6 @@ static void decode_text(const uint8_t *data, const uint32_t len)
 	out("Keyword = %s", keyword);
 	free(keyword);
 	data += i; l -= i;
-
-	data++; l--;
 
 	printf("\tText = ");
 	while (l > 0) {
@@ -613,7 +610,7 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	char *keyword, *comp;
 
 	i = 0;
-	l = len, i = 0;
+	l = len;
 
 	keyword = get_name_or_keyword(data, &i);
 	if (!keyword)
@@ -622,8 +619,6 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	out("Keyword = %s", keyword);
 	free(keyword);
 	data += i; l -= i;
-
-	data++; l--;
 
 	comp_flag = !!data[0];
 	comp = comp_flag ? "compressed" : "uncompressed";
@@ -672,7 +667,6 @@ static void decode_ztxt(const uint8_t *data, const uint32_t len)
 	free(keyword);
 	data += i; l -= i;
 
-	data++; l--;
 	out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
@@ -946,7 +940,6 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	data += i;
 	l -= i;
 
-	data++; l--;
 	sample_depth = data[0];
 	if (sample_depth != 8 && sample_depth != 16)
 		die("sPLT: invalid sample depth");
@@ -1153,8 +1146,6 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	data += i; l -= i;
 	i = 0;
 
-	data++; l--; /* next */
-
 	/* get x0 and x1 */
 	memcpy(&x0, data, 4);
 	x0 = __builtin_bswap32(x0);
@@ -1192,8 +1183,6 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 
 	name = NULL;
 	data += i; l -= i;
-
-	data++; l--; /* next */
 
 	/* print all values */
 	printf("\tValues = ");
