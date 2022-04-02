@@ -104,6 +104,7 @@ static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 	return crc ^ 0xffffffff;
 }
 
+#ifdef _DECODE_IDAT
 static const char *pd_basename(const char *old)
 {
 	const char *s;
@@ -115,6 +116,7 @@ static const char *pd_basename(const char *old)
 
 	return s;
 }
+#endif
 
 static uint32_t fread_u32(FILE *f)
 {
@@ -146,6 +148,7 @@ static char *get_name_or_keyword(const uint8_t *data, uint32_t *len)
 				break;
 		}
 
+		ret[i] = 0;
 		*len = i + 1;  /* + 1 null character */
 		return ret;
 	}
@@ -635,7 +638,6 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 
 	out("Keyword = %s", buf);
 	free(buf);
-	buf = NULL;
 	data += i; l -= i;
 
 	comp_flag = !!data[0];
@@ -643,7 +645,8 @@ static void decode_itxt(const uint8_t *data, const uint32_t len)
 	out("Compression flag = %u (%s)", comp_flag, comp);
 
 	data++; l--;
-	out("Compression method = %u (zlib deflate/inflate)", data[0]);
+	if (comp_flag)
+		out("Compression method = %u (zlib deflate/inflate)", data[0]);
 
 	data++; l--;
 	buf = get_name_or_keyword(data, &i);
@@ -1162,7 +1165,6 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 
 	name = NULL;
 	data += i; l -= i;
-	i = 0;
 
 	/* get x0 and x1 */
 	memcpy(&x0, data, 4);
@@ -1199,19 +1201,16 @@ static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 	out("Unit name = %s", name);
 	free(name);
 
-	name = NULL;
 	data += i; l -= i;
 
 	/* print all values */
 	printf("\tValues = ");
-	for (i = 0; i < params; i++) {
-		while (l > 0) {
-			if (valid_keyword(*data))
-				putchar(*data);
-			else
-				printf(", ");
-			data++; l--;
-		}
+	while (l > 0) {
+		if (valid_keyword(*data))
+			putchar(*data);
+		else
+			printf(", ");
+		data++; l--;
 	}
 
 	putchar('\n');
