@@ -14,7 +14,7 @@
 #include <string.h>
 #include <time.h>
 
-#define MAX_CHUNK     256
+#define MAX_CHUNK     8192
 #define MAX_IDAT_PATH 512
 
 enum COLOR_TYPE {
