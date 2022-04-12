@@ -9,7 +9,7 @@ $ ./chunkinfo test.apng
 	Height = 50
 	Bit depth = 8 per channel
 	Color type = RGB with Alpha channel
-	Channels = 4 per pixel (32 bytes)
+	Channels = 4 per pixel (32 bits)
 	Compression = 0 (zlib deflate/inflate)
 	Filter = 0 (adaptive filtering)
 	Interlace = 0 (no interlace)
