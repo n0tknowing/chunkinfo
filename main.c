@@ -139,7 +139,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 		die("IHDR: invalid interlace method");
 
 	w = h = 0;
-	chan_bits = chan[color_type] * bit_depth;
+	chan_bits = chan[color_type] * ((color_type == INDEXED) ? 8 : bit_depth);
 
 	memcpy(&w, data, 4);
 	w = __builtin_bswap32(w);
@@ -153,7 +153,8 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 
 	out("Width = %u", w);
 	out("Height = %u", h);
-	out("Bit depth = %u per channel", bit_depth);
+	out("Bit depth = %u bits per %s", bit_depth,
+			(color_type == INDEXED) ? "palette index" : "channel");
 	out("Color type = %s", cstr[color_type]);
 	out("Channels = %u per pixel (%u bits)", chan[color_type], chan_bits);
 	out("Compression = zlib deflate/inflate)");
