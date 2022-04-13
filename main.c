@@ -815,7 +815,7 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 
 	char *palette_name;
 	uint8_t sample_depth;
-	uint32_t col, entry, i, l;
+	uint32_t col, entry, i, l, step;
 
 	i = 0;
 	l = len;
@@ -840,41 +840,33 @@ static void decode_splt(const uint8_t *data, const uint32_t len)
 	if ((l % 6) != 0 && (l % 10) != 0)
 		die("sPLT: invalid palette length");
 
-	entry = sample_depth == 8 ? l / 6 : l / 10;
+	if (sample_depth == 8) {
+		entry = l / 6;
+		step = 6;
+	} else {
+		entry = l / 10;
+		step = 10;
+	}
+
 	out("Entries = %u", entry);
 
-	if (sample_depth == 8) {
-		for (i = 0; i < entry; i++, col += 6) {
-			printf("\t[%03u] ", i);
-			/* red */
+	for (i = 0; i < entry; i++, col += step) {
+		printf("\t[%03u] ", i);
+		if (sample_depth == 8) {
 			printf("#%02x", data[col]);
-			/* green */
 			printf("%02x", data[col+1]);
-			/* blue */
 			printf("%02x", data[col+2]);
-			/* alpha */
 			printf("%02x", data[col+3]);
-			/* frequency */
 			printf(" (%02x%02x)", data[col+4], data[col+5]);
-			if ((i + 1) % 3 == 0)
-				putchar('\n');
-		}
-	} else if (sample_depth == 16) {
-		for (i = 0; i < entry; i++, col += 10) {
-			printf("\t[%03u] ", i);
-			/* red */
+		} else {
 			printf("#%02x%02x", data[col], data[col+1]);
-			/* green */
 			printf("%02x%02x", data[col+2], data[col+3]);
-			/* blue */
 			printf("%02x%02x", data[col+4], data[col+5]);
-			/* alpha */
 			printf("%02x%02x", data[col+6], data[col+7]);
-			/* frequency */
 			printf(" (%02x%02x)", data[col+8], data[col+9]);
-			if ((i + 1) % 3 == 0)
-				putchar('\n');
 		}
+		if ((i + 1) % 3 == 0)
+			putchar('\n');
 	}
 
 	if (i % 3 != 0)
