@@ -17,6 +17,7 @@
 #define MAX_CHUNK	8192
 #define MAX_IDAT_PATH	512
 #define valid_keyword(c) ((c >= 0x20 && c <= 0x7e))
+#define is_separator(c)  ((c == '/' || c == '\\'))
 
 /* private util functions */
 static uint32_t pd_crc32(uint32_t, const void *, size_t);
@@ -1475,8 +1476,13 @@ static const char *pd_basename(const char *old)
 {
 	const char *s;
 
+#ifdef _WIN32
+	if (isalpha(old[0]) && old[1] == ':')
+		old += 2;
+#endif
+
 	for (s = old; *old; old++) {
-		if (*old == '/')
+		if (is_separator(*old))
 			s = old + 1;
 	}
 
