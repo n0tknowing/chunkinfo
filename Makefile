@@ -5,7 +5,6 @@ BIN     = chunkinfo
 RM      = rm -rf
 CTAGS   = ctags
 IDAT    = -D_DECODE_IDAT
-PS      = http://www.schaik.com/pngsuite/PngSuite-2017jul19.tgz
 
 .default: no-idat
 
@@ -23,13 +22,6 @@ debug-asan:
 
 clean:
 	$(RM) $(BIN) tags test *.zlib
-
-get-test:
-	@echo "PngSuite"
-	mkdir -p test
-	curl -s $(PS) -o test/pngsuite.tgz
-	tar xfz test/pngsuite.tgz -C test/
-	@echo "OK"
 
 tags:
 	$(CTAGS) $(SRC)
