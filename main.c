@@ -14,7 +14,6 @@
 #define MAX_CHUNK	8192
 #define MAX_IDAT_PATH	512
 #define valid_keyword(c) ((c >= 0x20 && c <= 0x7e))
-#define is_separator(c)  ((c == '/' || c == '\\'))
 
 /* private util functions */
 static uint32_t pd_crc32(uint32_t, const void *, size_t);
@@ -22,9 +21,6 @@ static uint32_t fread_u32(FILE *);
 static char *get_name_or_keyword(const uint8_t *, uint32_t *);
 static void die(const char *, ...);
 static void out(const char *, ...);
-#ifdef _DECODE_IDAT
-static const char *pd_basename(const char *);
-#endif
 
 enum COLOR_TYPE {
 	GRAY = 0,
@@ -213,10 +209,14 @@ static void decode_idat(const uint8_t *data, const uint32_t len)
 #if _DECODE_IDAT
 	FILE *f;
 	const char *idatf;
-	char temp[MAX_IDAT_PATH];
+	char temp[MAX_IDAT_PATH] = {0};
 
 	snprintf(temp, MAX_IDAT_PATH, "%s-IDAT.zlib", pngf);
-	idatf = pd_basename(temp);
+	idatf = strrchr(temp, '/');
+	if (idatf)
+		idatf++;
+	else
+		idatf = temp;
 
 	f = fopen(idatf, "ab");
 	if (!f)
@@ -1467,25 +1467,6 @@ static uint32_t pd_crc32(uint32_t crc, const void *buf, size_t len)
 
 	return crc ^ 0xffffffff;
 }
-
-#ifdef _DECODE_IDAT
-static const char *pd_basename(const char *old)
-{
-	const char *s;
-
-#ifdef _WIN32
-	if (isalpha(old[0]) && old[1] == ':')
-		old += 2;
-#endif
-
-	for (s = old; *old; old++) {
-		if (is_separator(*old))
-			s = old + 1;
-	}
-
-	return s;
-}
-#endif
 
 static uint32_t fread_u32(FILE *f)
 {
