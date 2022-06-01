@@ -1,15 +1,15 @@
-#!/usr/bin/bash
+#!/bin/sh
 
 # quick and dirty test file
 
 die() {
-	echo -e "\e[31m[ERROR]\e[0m" $1
+	echo "\e[31m[ERROR]\e[0m" $1
 	exit 1
 }
 
 info_test() {
 	echo ""
-	echo -e "\e[32m[INFO]\e[0m" $1
+	echo "\e[32m[INFO]\e[0m" $1
 	echo "---------------------------------------"
 }
 
@@ -21,9 +21,9 @@ pngsuite_dir="pngsuite"
 
 exec_test() {
 	if ( ./chunkinfo $1 >/dev/null ); then
-		echo -e "  \e[32m[OK]\e[0m " $1
+		echo "  \e[32m[OK]\e[0m " $1
 	else
-		echo -e "  \e[31m[FAIL]\e[0m " $1
+		echo "  \e[31m[FAIL]\e[0m " $1
 	fi
 }
 
