@@ -121,6 +121,3 @@ test_all() {
 }
 
 test_all
-
-echo "Test done, cleaning .zlib file..."
-rm -f *.zlib
