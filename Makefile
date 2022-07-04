@@ -21,7 +21,7 @@ debug-asan:
 	$(CC) $(CFLAGS) $(IDAT) -g -fsanitize=address,undefined $(SRC) -o $(BIN)
 
 clean:
-	$(RM) $(BIN) tags test *.zlib
+	$(RM) $(BIN) tags test *-IDAT.zlib
 
 tags:
 	$(CTAGS) $(SRC)
