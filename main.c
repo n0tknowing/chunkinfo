@@ -113,7 +113,7 @@ static void decode_ihdr(const uint8_t *data, const uint32_t len)
 
 	uint32_t w, h;
 	uint8_t chan_bits, comp, filter, interlace;
-	uint8_t chan[] = {
+	const uint8_t chan[] = {
 		[GRAY] = 1,
 		[RGB] = 3,
 		[INDEXED] = 1,
@@ -319,7 +319,7 @@ static void decode_srgb(const uint8_t *data, const uint32_t len)
 	if (data[0] > 3)
 		die("sRGB: invalid sRGB value: (%u)", data[0]);
 
-	char *srgb_data[5] = {
+	const char *srgb_data[5] = {
 		"Perceptual",
 		"Relative colorimetric",
 		"Saturation",
@@ -1004,9 +1004,10 @@ static void decode_ext_scal(const uint8_t *data, const uint32_t len)
 static void decode_ext_pcal(const uint8_t *data, const uint32_t len)
 {
 	uint8_t eq_type, params;
-	char *eq_str, *name;
+	char *name;
+	const char *eq_str;
 	uint32_t i, l, x0, x1;
-	char *eq_arr[5] = {
+	const char *eq_arr[5] = {
 		"linear", "exponential",
 		"exponential arbitrary base", "hyperbolic sinusoidal",
 		NULL
@@ -1193,9 +1194,9 @@ static void decode_apng_fctl(const uint8_t *data, const uint32_t len)
 
 	uint8_t i;
 	int offset;
-	char *dispose, *blend;
-	char *bl_str[3] = { "Source", "Over", NULL };
-	char *dis_str[4] = { "None", "Background", "Previous", NULL };
+	const char *dispose, *blend;
+	const char *bl_str[3] = { "Source", "Over", NULL };
+	const char *dis_str[4] = { "None", "Background", "Previous", NULL };
 
 	uint32_t buf1[4] = {0}; /* width, height, x_offset, y_offset */
 	uint16_t buf2[2] = {0}; /* delay_nums, delay_den */
