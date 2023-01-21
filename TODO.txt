@@ -3,3 +3,4 @@ TODO:
 - iTXt decoder (need utf8 library)
 - zTXt decoder (decompress then show the decompressed string)
 - check chunk ordering
+- improve error message
