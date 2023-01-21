@@ -1,5 +1,5 @@
 CC      = gcc
-CFLAGS  = -std=c99 -Wall -Wextra -Wstrict-prototypes -Wpedantic -O2
+CFLAGS  = -std=c11 -Wall -Wextra -Wstrict-prototypes -Wpedantic -O2
 SRC     = main.c
 BIN     = chunkinfo
 RM      = rm -rf
