@@ -1,8 +1,18 @@
-chunkinfo - show information of PNG chunks
+## chunkinfo - show information of PNG chunks
 
-installation and example
-------------------------
+
+### Installation
+
+```
+$ git clone https://github.com/n0tknowing/chunkinfo
+$ cd chunkinfo
 $ make
+```
+
+
+### Example
+
+```
 $ ./chunkinfo test.apng
 [IHDR] length 13 at offset 0x0000000c (f1fde38f)
 	Width = 51
@@ -47,12 +57,14 @@ $ ./chunkinfo test.apng
 
 All OK.
 Found 7 chunks from file test.apng
+```
 
-supported chunks
-----------------
+
+### Supported chunks
+
 - IHDR
 - PLTE
-- IDAT [*]
+- IDAT [\*]
 - tIME
 - pHYs
 - sRGB
@@ -77,13 +89,14 @@ supported chunks
 - acTL (from APNG)
 - fcTL (from APNG)
 
-[*] = compile it with "make idat", it will create a file with filename
+[\*] = compile it with "make idat", it will create a file with filename
       "filename-IDAT.zlib", but if you want to run chunkinfo with same PNG
       file, you need to remove the previous "filename-IDAT.zlib", if not,
       in the next run it will append new IDAT to the same zlib file.
 
-references
-----------
+
+### References
+
 - http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html
 - https://www.w3.org/TR/2003/REC-PNG-20031110
 - http://www.libpng.org/pub/png/book/toc.html
@@ -97,8 +110,9 @@ references
 - https://exiftool.org/TagNames/PNG.html
 - https://w3c.github.io/PNG-spec
 
-notes
------
+
+### Notes
+
 This software is far from perfect, no chunk checking like chunk ordering
 of IDAT and PLTE, because there are chunks that need to appear before
 IDAT and PLTE like cHRM, gAMA, and iCPP.
